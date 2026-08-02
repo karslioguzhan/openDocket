@@ -48,7 +48,12 @@ async def csrf_origin_check(request: Request, call_next):
     if request.method not in CSRF_SAFE_METHODS:
         origin = request.headers.get("origin")
         if origin:
-            expected = f"{request.url.scheme}://{request.url.netloc}"
+            host = request.headers.get("host")
+            if host:
+                scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
+                expected = f"{scheme}://{host}"
+            else:
+                expected = f"{request.url.scheme}://{request.url.netloc}"
             if origin.rstrip("/") != expected:
                 return JSONResponse(
                     status_code=403, content={"detail": "CSRF origin check failed."}

@@ -24,8 +24,6 @@ def upgrade() -> None:
         "draft", "active", "expired", "terminated", name="contract_status"
     )
     share_role = postgresql.ENUM("viewer", name="share_role")
-    contract_status.create(op.get_bind(), checkfirst=True)
-    share_role.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
         "users",

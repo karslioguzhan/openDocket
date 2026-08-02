@@ -5,6 +5,7 @@ import uuid
 
 from sqlalchemy import (
     Date,
+    DateTime,
     Enum,
     ForeignKey,
     Index,
@@ -64,7 +65,9 @@ class Contract(TimestampMixin, Base):
     value: Mapped[float | None] = mapped_column(Numeric(14, 2), nullable=True)
     currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
 
-    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
 
     owner: Mapped["User"] = relationship("User", back_populates="contracts")
     counterparty: Mapped["Counterparty | None"] = relationship("Counterparty", back_populates="contracts")
