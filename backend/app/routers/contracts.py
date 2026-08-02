@@ -31,7 +31,12 @@ router = APIRouter(prefix="/api/contracts", tags=["contracts"])
 
 async def _resolve_tags(session: AsyncSession, user: User, names: list[str]) -> list[Tag]:
     tags: list[Tag] = []
-    for name in set(n.strip() for n in names if n.strip()):
+    seen: set[str] = set()
+    for raw in names:
+        name = raw.strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
         tag = await session.scalar(
             select(Tag).where(Tag.owner_id == user.id, Tag.name == name)
         )

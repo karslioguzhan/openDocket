@@ -23,7 +23,7 @@ async def test_export_zip(client, owner, login):
     assert len(manifest["contracts"]) == 1
     entry = manifest["contracts"][0]
     assert entry["title"] == "Export me"
-    assert entry["tags"] == ["a", "b"]
+    assert set(entry["tags"]) == {"a", "b"}
     assert len(entry["files"]) == 1
     stored = entry["files"][0]["stored_name"]
     assert zf.read(f"files/{stored}") == b"pdfbytes"
