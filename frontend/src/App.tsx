@@ -1,0 +1,44 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./auth";
+import { Layout } from "./components/Layout";
+import { Login } from "./pages/Login";
+import { Dashboard } from "./pages/Dashboard";
+import { ContractList } from "./pages/ContractList";
+import { ContractDetail } from "./pages/ContractDetail";
+import { ContractForm } from "./pages/ContractForm";
+import { Counterparties } from "./pages/Counterparties";
+import { Trash } from "./pages/Trash";
+import { Admin } from "./pages/Admin";
+
+function Protected({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="empty">Loading…</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+export default function App() {
+  const { user } = useAuth();
+  return (
+    <Routes>
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route
+        element={
+          <Protected>
+            <Layout />
+          </Protected>
+        }
+      >
+        <Route index element={<Dashboard />} />
+        <Route path="contracts" element={<ContractList />} />
+        <Route path="contracts/new" element={<ContractForm />} />
+        <Route path="contracts/:id" element={<ContractDetail />} />
+        <Route path="contracts/:id/edit" element={<ContractForm />} />
+        <Route path="counterparties" element={<Counterparties />} />
+        <Route path="trash" element={<Trash />} />
+        <Route path="admin" element={<Admin />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
