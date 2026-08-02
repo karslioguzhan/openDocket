@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: opendocket
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-opendocket}
+      POSTGRES_DB: opendocket
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opendocket"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://opendocket:${POSTGRES_PASSWORD:-opendocket}@postgres:5432/opendocket
+      SECRET: ${SECRET:-change-me}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      FILE_STORAGE_DIR: /data/files
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      AUTO_CREATE_TABLES: "false"
+    volumes:
+      - filedata:/data/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${PORT:-8080}:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  filedata:
