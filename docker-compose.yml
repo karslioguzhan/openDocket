@@ -25,6 +25,11 @@ services:
       AUTO_CREATE_TABLES: "false"
     volumes:
       - filedata:/data/files
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=3)\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,7 +39,8 @@ services:
     ports:
       - "${PORT:-8080}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   pgdata:
