@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { login } from "../api";
 import { useAuth } from "../auth";
+import { LanguageSwitcher } from "../components/LanguageSwitcher";
 
 export function Login() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +23,7 @@ export function Login() {
       await refresh();
       navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : t("login.failed"));
     } finally {
       setBusy(false);
     }
@@ -30,8 +33,11 @@ export function Login() {
     <div className="login-wrap">
       <form className="login-box" onSubmit={submit}>
         <h1>📋 openDocket</h1>
+        <div style={{ textAlign: "right", marginBottom: 8 }}>
+          <LanguageSwitcher />
+        </div>
         {error && <div className="error">{error}</div>}
-        <label>Email</label>
+        <label>{t("login.email")}</label>
         <input
           type="email"
           value={email}
@@ -39,7 +45,7 @@ export function Login() {
           autoComplete="username"
           required
         />
-        <label>Password</label>
+        <label>{t("login.password")}</label>
         <input
           type="password"
           value={password}
@@ -49,7 +55,7 @@ export function Login() {
         />
         <div style={{ marginTop: 20 }}>
           <button type="submit" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in"}
+            {busy ? t("login.signingIn") : t("login.signIn")}
           </button>
         </div>
       </form>

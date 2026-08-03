@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import type { Contract } from "../types";
 
 export function Trash() {
+  const { t, i18n } = useTranslation();
   const [rows, setRows] = useState<Contract[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -11,7 +13,7 @@ export function Trash() {
     try {
       setRows(await api<Contract[]>("/contracts?trashed=true"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof Error ? e.message : t("trash.loadFailed"));
     }
   }, []);
 
@@ -27,21 +29,21 @@ export function Trash() {
   return (
     <>
       <div className="page-header">
-        <h1>Trash</h1>
+        <h1>{t("trash.title")}</h1>
       </div>
       <div className="card muted">
-        Contracts in trash are purged automatically after 30 days.
+        {t("trash.note")}
       </div>
       {error && <div className="error">{error}</div>}
       {rows.length === 0 ? (
-        <div className="card empty">Trash is empty.</div>
+        <div className="card empty">{t("trash.empty")}</div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <table>
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Deleted</th>
+                <th>{t("common.title")}</th>
+                <th>{t("trash.deleted")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -51,10 +53,10 @@ export function Trash() {
                   <td>
                     <Link to={`/contracts/${c.id}`}>{c.title}</Link>
                   </td>
-                  <td>{c.deleted_at ? new Date(c.deleted_at).toLocaleDateString() : "—"}</td>
+                  <td>{c.deleted_at ? new Date(c.deleted_at).toLocaleDateString(i18n.language) : "—"}</td>
                   <td>
                     <button className="secondary" onClick={() => restore(c.id)}>
-                      Restore
+                      {t("trash.restore")}
                     </button>
                   </td>
                 </tr>

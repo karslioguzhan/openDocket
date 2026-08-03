@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "./auth";
 import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
@@ -12,7 +13,8 @@ import { Admin } from "./pages/Admin";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="empty">Loading…</div>;
+  const { t } = useTranslation();
+  if (loading) return <div className="empty">{t("app.loading")}</div>;
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }

@@ -1,10 +1,13 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { logout } from "../api";
 import { useAuth } from "../auth";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 export function Layout() {
   const { user, refresh } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     await logout();
@@ -18,20 +21,23 @@ export function Layout() {
         <div className="brand">📋 openDocket</div>
         <nav>
           <NavLink to="/" end>
-            Dashboard
+            {t("nav.dashboard")}
           </NavLink>
-          <NavLink to="/contracts">Contracts</NavLink>
-          <NavLink to="/counterparties">Counterparties</NavLink>
-          <NavLink to="/trash">Trash</NavLink>
-          {user?.is_superuser && <NavLink to="/admin">Admin</NavLink>}
+          <NavLink to="/contracts">{t("nav.contracts")}</NavLink>
+          <NavLink to="/counterparties">{t("nav.counterparties")}</NavLink>
+          <NavLink to="/trash">{t("nav.trash")}</NavLink>
+          {user?.is_superuser && <NavLink to="/admin">{t("nav.admin")}</NavLink>}
         </nav>
         <div className="userbox">
           <div>
             {user?.display_name ?? user?.email}
-            {user?.is_superuser && " · admin"}
+            {user?.is_superuser && ` · ${t("nav.adminSuffix")}`}
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <LanguageSwitcher />
           </div>
           <button className="btn secondary" style={{ marginTop: 8 }} onClick={handleLogout}>
-            Sign out
+            {t("nav.signOut")}
           </button>
         </div>
       </aside>

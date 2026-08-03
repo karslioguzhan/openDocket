@@ -1,3 +1,5 @@
+import i18n from "./i18n";
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -43,7 +45,7 @@ export async function login(email: string, password: string): Promise<void> {
     credentials: "include",
   });
   if (resp.status === 204) return;
-  throw new ApiError(resp.status, "Login failed");
+  throw new ApiError(resp.status, i18n.t("login.failed"));
 }
 
 export async function logout(): Promise<void> {

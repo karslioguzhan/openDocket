@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import type { Counterparty } from "../types";
 
 export function Counterparties() {
+  const { t } = useTranslation();
   const [rows, setRows] = useState<Counterparty[]>([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -13,7 +15,7 @@ export function Counterparties() {
     try {
       setRows(await api<Counterparty[]>("/counterparties"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof Error ? e.message : t("counterparties.loadFailed"));
     }
   }, []);
 
@@ -35,44 +37,44 @@ export function Counterparties() {
       setPhone("");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : t("counterparties.saveFailed"));
     }
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Delete this counterparty? It cannot be deleted while referenced by contracts.")) return;
+    if (!confirm(t("counterparties.deleteConfirm"))) return;
     try {
       await api<void>(`/counterparties/${id}`, { method: "DELETE" });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      setError(err instanceof Error ? err.message : t("counterparties.deleteFailed"));
     }
   };
 
   return (
     <>
       <div className="page-header">
-        <h1>Counterparties</h1>
+        <h1>{t("counterparties.title")}</h1>
       </div>
       {error && <div className="error">{error}</div>}
 
       <form className="card" onSubmit={add} style={{ display: "flex", gap: 10 }}>
-        <input placeholder="Name *" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        <button type="submit">Add</button>
+        <input placeholder={t("counterparties.nameRequired")} value={name} onChange={(e) => setName(e.target.value)} required />
+        <input placeholder={t("counterparties.email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input placeholder={t("counterparties.phone")} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <button type="submit">{t("counterparties.add")}</button>
       </form>
 
       {rows.length === 0 ? (
-        <div className="card empty">No counterparties yet.</div>
+        <div className="card empty">{t("counterparties.noCounterparties")}</div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
+                <th>{t("common.name")}</th>
+                <th>{t("common.email")}</th>
+                <th>{t("common.phone")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -84,7 +86,7 @@ export function Counterparties() {
                   <td>{c.phone ?? "—"}</td>
                   <td>
                     <button className="danger" style={{ padding: "4px 10px" }} onClick={() => remove(c.id)}>
-                      Delete
+                      {t("common.delete")}
                     </button>
                   </td>
                 </tr>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import type { Contract, ContractFile } from "../types";
 import { ExpiryLabel, StatusBadge, formatBytes, valueLabel } from "../components/ui";
@@ -7,6 +8,7 @@ import { ExpiryLabel, StatusBadge, formatBytes, valueLabel } from "../components
 export function ContractDetail() {
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [contract, setContract] = useState<Contract | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [shareEmail, setShareEmail] = useState("");
@@ -16,7 +18,7 @@ export function ContractDetail() {
     try {
       setContract(await api<Contract>(`/contracts/${id}`));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof Error ? e.message : t("contractDetail.loadFailed"));
     }
   }, [id]);
 
@@ -25,12 +27,12 @@ export function ContractDetail() {
   }, [load]);
 
   if (error) return <div className="error">{error}</div>;
-  if (!contract) return <div className="empty">Loading…</div>;
+  if (!contract) return <div className="empty">{t("app.loading")}</div>;
 
   const isOwner = contract.role === "owner";
 
   const del = async () => {
-    if (!confirm("Move this contract to trash?")) return;
+    if (!confirm(t("contractDetail.moveToTrashConfirm"))) return;
     await api<void>(`/contracts/${id}`, { method: "DELETE" });
     navigate("/contracts");
   };
@@ -51,7 +53,7 @@ export function ContractDetail() {
       setShareEmail("");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Share failed");
+      setError(err instanceof Error ? err.message : t("contractDetail.shareFailed"));
     }
   };
 
@@ -70,7 +72,7 @@ export function ContractDetail() {
       await api<ContractFile>(`/contracts/${id}/files`, { method: "POST", body: form });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t("contractDetail.uploadFailed"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -78,7 +80,7 @@ export function ContractDetail() {
   };
 
   const removeFile = async (fileId: string) => {
-    if (!confirm("Delete this file?")) return;
+    if (!confirm(t("contractDetail.deleteFileConfirm"))) return;
     await api<void>(`/contracts/${id}/files/${fileId}`, { method: "DELETE" });
     await load();
   };
@@ -91,68 +93,68 @@ export function ContractDetail() {
           {isOwner && (
             <>
               <Link className="btn secondary" to={`/contracts/${id}/edit`}>
-                Edit
+                {t("contractDetail.edit")}
               </Link>
               <button className="secondary" onClick={duplicate}>
-                Duplicate
+                {t("contractDetail.duplicate")}
               </button>
               <button className="danger" onClick={del}>
-                Trash
+                {t("contractDetail.trash")}
               </button>
             </>
           )}
         </div>
       </div>
 
-      {!isOwner && <div className="card">You have <b>viewer</b> access to this contract.</div>}
+      {!isOwner && <div className="card">{t("contractDetail.viewerAccess")}</div>}
 
       <div className="card">
         <div className="grid">
           <div className="stat">
-            <div className="lbl">Status</div>
+            <div className="lbl">{t("common.status")}</div>
             <StatusBadge status={contract.status} />
           </div>
           <div className="stat">
-            <div className="lbl">Counterparty</div>
+            <div className="lbl">{t("common.counterparty")}</div>
             <div>{contract.counterparty?.name ?? "—"}</div>
           </div>
           <div className="stat">
-            <div className="lbl">Category</div>
+            <div className="lbl">{t("common.category")}</div>
             <div>{contract.category?.name ?? "—"}</div>
           </div>
           <div className="stat">
-            <div className="lbl">Effective date</div>
-            <div>{contract.effective_date ?? "—"}</div>
+            <div className="lbl">{t("contractDetail.effectiveDate")}</div>
+            <div>{contract.effective_date ? new Date(contract.effective_date + "T00:00:00").toLocaleDateString(i18n.language) : "—"}</div>
           </div>
           <div className="stat">
-            <div className="lbl">Expiry / renewal</div>
+            <div className="lbl">{t("contractDetail.expiryRenewal")}</div>
             <ExpiryLabel expiry={contract.expiry_date} />
           </div>
           <div className="stat">
-            <div className="lbl">Value</div>
+            <div className="lbl">{t("common.value")}</div>
             <div>{valueLabel(contract.value, contract.currency) || "—"}</div>
           </div>
           <div className="stat">
-            <div className="lbl">Notice period</div>
-            <div>{contract.notice_days === null ? "—" : `${contract.notice_days} days`}</div>
+            <div className="lbl">{t("contractDetail.noticePeriod")}</div>
+            <div>{contract.notice_days === null ? "—" : t("noticeDays", { count: contract.notice_days })}</div>
           </div>
           <div className="stat">
-            <div className="lbl">Tags</div>
+            <div className="lbl">{t("contractDetail.tags")}</div>
             <div className="tags">
-              {contract.tags.length ? contract.tags.map((t) => <span key={t} className="tag">{t}</span>) : "—"}
+              {contract.tags.length ? contract.tags.map((tg) => <span key={tg} className="tag">{tg}</span>) : "—"}
             </div>
           </div>
         </div>
         {contract.notes && (
           <div style={{ marginTop: 16 }}>
-            <div className="lbl" style={{ fontWeight: 600 }}>Notes</div>
+            <div className="lbl" style={{ fontWeight: 600 }}>{t("contractDetail.notes")}</div>
             <p style={{ whiteSpace: "pre-wrap" }}>{contract.notes}</p>
           </div>
         )}
       </div>
 
       <div className="card">
-        <h2>Files ({contract.files.length})</h2>
+        <h2>{t("contractDetail.files", { count: contract.files.length })}</h2>
         {contract.files.length > 0 && (
           <ul className="file-list">
             {contract.files.map((f) => (
@@ -167,7 +169,7 @@ export function ContractDetail() {
                 </span>
                 {isOwner && (
                   <button className="danger" style={{ padding: "4px 10px" }} onClick={() => removeFile(f.id)}>
-                    Delete
+                    {t("contractDetail.deleteFile")}
                   </button>
                 )}
               </li>
@@ -176,7 +178,7 @@ export function ContractDetail() {
         )}
         {isOwner && (
           <label className="btn secondary" style={{ marginTop: 12, display: "inline-block", cursor: "pointer" }}>
-            {uploading ? "Uploading…" : "Upload file"}
+            {uploading ? t("contractDetail.uploading") : t("contractDetail.uploadFile")}
             <input type="file" style={{ display: "none" }} onChange={upload} />
           </label>
         )}
@@ -184,9 +186,9 @@ export function ContractDetail() {
 
       {isOwner && (
         <div className="card">
-          <h2>Shared with</h2>
+          <h2>{t("contractDetail.sharedWith")}</h2>
           {contract.shares.length === 0 ? (
-            <div className="muted">Not shared with anyone.</div>
+            <div className="muted">{t("contractDetail.notShared")}</div>
           ) : (
             <table>
               <tbody>
@@ -194,10 +196,10 @@ export function ContractDetail() {
                   <tr key={s.user_id}>
                     <td>{s.display_name ?? s.email}</td>
                     <td>{s.email}</td>
-                    <td className="badge viewer">viewer</td>
+                    <td className="badge viewer">{t("role.viewer")}</td>
                     <td>
                       <button className="danger" style={{ padding: "4px 10px" }} onClick={() => removeShare(s.user_id)}>
-                        Revoke
+                        {t("contractDetail.revoke")}
                       </button>
                     </td>
                   </tr>
@@ -208,12 +210,12 @@ export function ContractDetail() {
           <form onSubmit={addShare} style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <input
               type="email"
-              placeholder="user@example.com"
+              placeholder={t("contractDetail.shareEmailPlaceholder")}
               value={shareEmail}
               onChange={(e) => setShareEmail(e.target.value)}
               style={{ maxWidth: 260 }}
             />
-            <button type="submit">Share</button>
+            <button type="submit">{t("contractDetail.share")}</button>
           </form>
         </div>
       )}

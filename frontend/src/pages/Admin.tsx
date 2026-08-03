@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import type { User } from "../types";
 
 export function Admin() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,7 +15,7 @@ export function Admin() {
     try {
       setUsers(await api<User[]>("/users"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load users");
+      setError(e instanceof Error ? e.message : t("admin.loadFailed"));
     }
   }, []);
 
@@ -32,10 +34,10 @@ export function Admin() {
       });
       setEmail("");
       setPassword("");
-      setNotice(`Created account for ${email}. Share the password with them.`);
+      setNotice(t("admin.created", { email }));
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Create failed");
+      setError(err instanceof Error ? err.message : t("admin.createFailed"));
     }
   };
 
@@ -47,87 +49,87 @@ export function Admin() {
       });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Update failed");
+      setError(err instanceof Error ? err.message : t("admin.updateFailed"));
     }
   };
 
   const resetPassword = async (u: User) => {
-    const pw = prompt(`New password for ${u.email}:`);
+    const pw = prompt(t("admin.newPasswordPrompt", { email: u.email }));
     if (!pw) return;
     try {
       await api<User>(`/users/${u.id}`, {
         method: "PATCH",
         body: JSON.stringify({ password: pw }),
       });
-      setNotice(`Password reset for ${u.email}.`);
+      setNotice(t("admin.passwordReset", { email: u.email }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Reset failed");
+      setError(err instanceof Error ? err.message : t("admin.resetFailed"));
     }
   };
 
   const removeUser = async (u: User) => {
-    if (!confirm(`Delete account ${u.email}? Their contracts are deleted too.`)) return;
+    if (!confirm(t("admin.deleteConfirm", { email: u.email }))) return;
     try {
       await api<void>(`/users/${u.id}`, { method: "DELETE" });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      setError(err instanceof Error ? err.message : t("admin.deleteFailed"));
     }
   };
 
   return (
     <>
       <div className="page-header">
-        <h1>Admin — user management</h1>
+        <h1>{t("admin.title")}</h1>
       </div>
       {error && <div className="error">{error}</div>}
       {notice && <div className="card" style={{ background: "#e2f5ea", borderColor: "#b5e0c3" }}>{notice}</div>}
 
       <form className="card" onSubmit={createUser} style={{ display: "flex", gap: 10 }}>
-        <input type="email" placeholder="new@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input type="email" placeholder={t("admin.emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} required />
         <input
           type="password"
-          placeholder="Initial password"
+          placeholder={t("admin.initialPassword")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={8}
         />
-        <button type="submit">Create account</button>
+        <button type="submit">{t("admin.createAccount")}</button>
       </form>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <table>
           <thead>
             <tr>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Active</th>
-              <th>Actions</th>
+              <th>{t("common.email")}</th>
+              <th>{t("admin.role")}</th>
+              <th>{t("admin.active")}</th>
+              <th>{t("admin.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
               <tr key={u.id}>
                 <td>{u.email}</td>
-                <td>{u.is_superuser ? <span className="badge">admin</span> : <span className="badge">user</span>}</td>
-                <td>{u.is_active ? "yes" : "no"}</td>
+                <td>{u.is_superuser ? <span className="badge">{t("nav.admin")}</span> : <span className="badge">user</span>}</td>
+                <td>{u.is_active ? t("admin.yes") : t("admin.no")}</td>
                 <td style={{ display: "flex", gap: 8 }}>
                   <button className="secondary" style={{ padding: "4px 10px" }} onClick={() => resetPassword(u)}>
-                    Reset password
+                    {t("admin.resetPassword")}
                   </button>
                   {u.is_active ? (
                     <button className="secondary" style={{ padding: "4px 10px" }} onClick={() => setActive(u, false)}>
-                      Disable
+                      {t("admin.disable")}
                     </button>
                   ) : (
                     <button className="secondary" style={{ padding: "4px 10px" }} onClick={() => setActive(u, true)}>
-                      Enable
+                      {t("admin.enable")}
                     </button>
                   )}
                   {!u.is_superuser && (
                     <button className="danger" style={{ padding: "4px 10px" }} onClick={() => removeUser(u)}>
-                      Delete
+                      {t("admin.delete")}
                     </button>
                   )}
                 </td>

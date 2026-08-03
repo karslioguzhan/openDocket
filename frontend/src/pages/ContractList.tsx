@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import type { Contract, ContractStatus } from "../types";
 import { ExpiryLabel, RoleBadge, valueLabel } from "../components/ui";
@@ -7,6 +8,7 @@ import { ExpiryLabel, RoleBadge, valueLabel } from "../components/ui";
 const STATUSES: Array<ContractStatus | ""> = ["", "draft", "active", "expired", "terminated"];
 
 export function ContractList() {
+  const { t } = useTranslation();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -26,7 +28,7 @@ export function ContractList() {
       const rows = await api<Contract[]>(`/contracts?${params.toString()}`);
       setContracts(rows);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof Error ? e.message : t("contracts.loadFailed"));
     }
   }, [debounced, status]);
 
@@ -37,15 +39,15 @@ export function ContractList() {
   return (
     <>
       <div className="page-header">
-        <h1>Contracts</h1>
+        <h1>{t("contracts.title")}</h1>
         <Link className="btn" to="/contracts/new">
-          + New contract
+          {t("contracts.newContract")}
         </Link>
       </div>
 
       <div className="card" style={{ display: "flex", gap: 12 }}>
         <input
-          placeholder="Search title, notes, counterparty, tags…"
+          placeholder={t("contracts.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ flex: 1 }}
@@ -53,7 +55,7 @@ export function ContractList() {
         <select value={status} onChange={(e) => setStatus(e.target.value as ContractStatus)} style={{ width: 180 }}>
           {STATUSES.map((s) => (
             <option key={s || "all"} value={s}>
-              {s === "" ? "All statuses" : s}
+              {s === "" ? t("contracts.allStatuses") : t(`status.${s}`)}
             </option>
           ))}
         </select>
@@ -62,19 +64,19 @@ export function ContractList() {
       {error && <div className="error">{error}</div>}
 
       {contracts.length === 0 ? (
-        <div className="card empty">No contracts found.</div>
+        <div className="card empty">{t("contracts.noContracts")}</div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <table>
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Counterparty</th>
-                <th>Category</th>
-                <th>Expiry</th>
-                <th>Value</th>
-                <th>Tags</th>
+                <th>{t("common.title")}</th>
+                <th>{t("common.status")}</th>
+                <th>{t("common.counterparty")}</th>
+                <th>{t("common.category")}</th>
+                <th>{t("common.expiry")}</th>
+                <th>{t("common.value")}</th>
+                <th>{t("common.tags")}</th>
               </tr>
             </thead>
             <tbody>
@@ -84,7 +86,7 @@ export function ContractList() {
                     <Link to={`/contracts/${c.id}`}>{c.title}</Link> <RoleBadge role={c.role} />
                   </td>
                   <td>
-                    <span className={`badge ${c.status}`}>{c.status}</span>
+                    <span className={`badge ${c.status}`}>{t(`status.${c.status}`)}</span>
                   </td>
                   <td>{c.counterparty?.name ?? "—"}</td>
                   <td>{c.category?.name ?? "—"}</td>
@@ -94,9 +96,9 @@ export function ContractList() {
                   <td>{valueLabel(c.value, c.currency) || "—"}</td>
                   <td>
                     <div className="tags">
-                      {c.tags.map((t) => (
-                        <span key={t} className="tag">
-                          {t}
+                      {c.tags.map((tg) => (
+                        <span key={tg} className="tag">
+                          {tg}
                         </span>
                       ))}
                     </div>

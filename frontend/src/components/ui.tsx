@@ -1,12 +1,15 @@
+import { useTranslation } from "react-i18next";
 import type { ContractStatus } from "../types";
 
 export function StatusBadge({ status }: { status: ContractStatus }) {
-  return <span className={`badge ${status}`}>{status}</span>;
+  const { t } = useTranslation();
+  return <span className={`badge ${status}`}>{t(`status.${status}`)}</span>;
 }
 
 export function RoleBadge({ role }: { role: "owner" | "viewer" }) {
+  const { t } = useTranslation();
   if (role === "owner") return null;
-  return <span className="badge viewer">shared</span>;
+  return <span className="badge viewer">{t("role.shared")}</span>;
 }
 
 export function DaysLeft(expiry: string | null): number | null {
@@ -15,14 +18,23 @@ export function DaysLeft(expiry: string | null): number | null {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+export function formatDate(date: string | null, locale: string): string | null {
+  if (!date) return null;
+  const [y, m, d] = date.split("-").map(Number);
+  if (!y || !m || !d) return date;
+  return new Date(y, m - 1, d).toLocaleDateString(locale, { year: "numeric", month: "2-digit", day: "2-digit" });
+}
+
 export function ExpiryLabel({ expiry }: { expiry: string | null }) {
+  const { t, i18n } = useTranslation();
   if (!expiry) return <span className="muted">—</span>;
   const days = DaysLeft(expiry);
-  if (days === null) return <span>{expiry}</span>;
-  if (days < 0) return <span className="badge expired">expired {Math.abs(days)}d ago</span>;
-  if (days <= 30) return <span className="days-urgent">{expiry} · {days}d</span>;
-  if (days <= 90) return <span className="days-warn">{expiry} · {days}d</span>;
-  return <span>{expiry}</span>;
+  const label = formatDate(expiry, i18n.language) ?? expiry;
+  if (days === null) return <span>{label}</span>;
+  if (days < 0) return <span className="badge expired">{t("expiry.expiredAgo", { count: Math.abs(days) })}</span>;
+  if (days <= 30) return <span className="days-urgent">{label} · {t("expiry.daysShort", { count: days })}</span>;
+  if (days <= 90) return <span className="days-warn">{label} · {t("expiry.daysShort", { count: days })}</span>;
+  return <span>{label}</span>;
 }
 
 export function formatBytes(bytes: number): string {

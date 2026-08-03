@@ -83,6 +83,12 @@ a:hover {
   color: var(--muted);
 }
 
+.lang-switch {
+  width: auto;
+  font-size: 13px;
+  padding: 5px 8px;
+}
+
 .main {
   flex: 1;
   padding: 28px 36px;
