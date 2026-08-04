@@ -84,3 +84,20 @@ export interface ContractPayload {
   value?: string | null;
   currency?: string | null;
 }
+
+export interface ExtractedFile {
+  original_name: string;
+  mime_type: string;
+  size_bytes: number;
+}
+
+export interface ExtractionResult {
+  title: string | null;
+  counterparty_name: string | null;
+  effective_date: string | null;
+  expiry_date: string | null;
+  notice_days: number | null;
+  value: string | null;
+  currency: string | null;
+  files: ExtractedFile[];
+}

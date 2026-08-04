@@ -285,6 +285,31 @@ label {
   margin-bottom: 14px;
 }
 
+.notice {
+  background: #eef6ff;
+  color: #1d4e89;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.mode-card {
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+
+.mode-card:hover {
+  border-color: var(--accent);
+}
+
 .muted {
   color: var(--muted);
 }

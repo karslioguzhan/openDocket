@@ -125,6 +125,23 @@ class ContractFileOut(BaseModel):
     created_at: datetime
 
 
+class ExtractedFileOut(BaseModel):
+    original_name: str
+    mime_type: str
+    size_bytes: int
+
+
+class ExtractionOut(BaseModel):
+    title: str | None = None
+    counterparty_name: str | None = None
+    effective_date: date | None = None
+    expiry_date: date | None = None
+    notice_days: int | None = None
+    value: Decimal | None = None
+    currency: str | None = None
+    files: list[ExtractedFileOut] = []
+
+
 class ShareOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

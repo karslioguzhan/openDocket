@@ -17,6 +17,7 @@
 - **Contract**: title, status (`Draft`/`Active`/`Expired`/`Terminated`), counterparty (FK), effective date, expiry/renewal date, notice-period days, notes, optional value + currency, category (**predefined enum**, grouped; stored as key string, labels localized in UI), tags, owner, shared-with ACL, `deleted_at`.
 - **Counterparty**: structured entity (name + optional contact/notes) — enables "all contracts with Acme".
 - **Files**: multiple per contract (PDF/image/docx/odt, 25 MB cap), original name + MIME stored.
+- **Scan-to-contract**: on creation, choose manual entry or upload PDF(s)/images to auto-fill fields (Tesseract OCR + heuristics, optional LLM via `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`); files attach automatically after review.
 - Renewal = duplicate + update dates (not a status).
 
 **Stack**
@@ -63,4 +64,4 @@ Browser ──► nginx ──► /api/* ──► FastAPI (uvicorn) ──► P
 - Trash visible to owners only.
 
 ## Deferred (post-MVP, schema already accommodates)
-- Email reminders for expiry/renewal, OCR/full-text-in-PDF, iCal export, public API, Playwright E2E, CI/image publishing.
+- Email reminders for expiry/renewal, iCal export, public API, Playwright E2E, CI/image publishing.
