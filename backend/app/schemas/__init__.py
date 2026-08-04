@@ -7,7 +7,7 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from fastapi_users import schemas as fu_schemas
 
-from app.models import ContractStatus
+from app.models import ContractCategory, ContractStatus
 
 
 class UserCreate(fu_schemas.BaseUserCreate):
@@ -71,15 +71,9 @@ class CounterpartyOut(BaseModel):
     created_at: datetime
 
 
-class CategoryIn(BaseModel):
-    name: str = Field(min_length=1, max_length=80)
-
-
-class CategoryOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    name: str
+class CategoryMeta(BaseModel):
+    key: str
+    group: str
 
 
 class TagIn(BaseModel):
@@ -97,7 +91,7 @@ class ContractCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     status: ContractStatus = ContractStatus.draft
     counterparty_id: uuid.UUID | None = None
-    category_id: uuid.UUID | None = None
+    category: ContractCategory | None = None
     tags: list[str] = Field(default_factory=list)
     effective_date: date | None = None
     expiry_date: date | None = None
@@ -111,7 +105,7 @@ class ContractUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     status: ContractStatus | None = None
     counterparty_id: uuid.UUID | None = None
-    category_id: uuid.UUID | None = None
+    category: ContractCategory | None = None
     tags: list[str] | None = None
     effective_date: date | None = None
     expiry_date: date | None = None
@@ -150,7 +144,7 @@ class ContractOut(BaseModel):
     role: str
     owner_id: uuid.UUID
     counterparty: CounterpartyOut | None = None
-    category: CategoryOut | None = None
+    category: ContractCategory | None = None
     tags: list[str] = []
     effective_date: date | None = None
     expiry_date: date | None = None

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from app.models import Contract
 from app.schemas import (
-    CategoryOut,
     ContractOut,
     ContractFileOut,
     CounterpartyOut,
@@ -35,11 +34,7 @@ def contract_to_out(contract: Contract, include_shares: bool = True) -> Contract
             if contract.counterparty is not None
             else None
         ),
-        category=(
-            CategoryOut.model_validate(contract.category)
-            if contract.category is not None
-            else None
-        ),
+        category=contract.category,
         tags=[t.name for t in contract.tags],
         effective_date=contract.effective_date,
         expiry_date=contract.expiry_date,

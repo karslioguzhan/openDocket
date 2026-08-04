@@ -2,15 +2,18 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
-import type { Category, Contract, ContractPayload, ContractStatus, Counterparty } from "../types";
+import { categoryLabel, groupLabel } from "../components/ui";
+import type { CategoryMeta, Contract, ContractPayload, ContractStatus, Counterparty } from "../types";
 
 const STATUSES: ContractStatus[] = ["draft", "active", "expired", "terminated"];
+
+const CURRENCIES = ["EUR", "USD", "TRY"];
 
 interface FormState {
   title: string;
   status: ContractStatus;
   counterparty_id: string;
-  category_id: string;
+  category: string;
   tags: string;
   effective_date: string;
   expiry_date: string;
@@ -24,14 +27,14 @@ const empty: FormState = {
   title: "",
   status: "draft",
   counterparty_id: "",
-  category_id: "",
+  category: "",
   tags: "",
   effective_date: "",
   expiry_date: "",
   notice_days: "",
   notes: "",
   value: "",
-  currency: "",
+  currency: "EUR",
 };
 
 export function ContractForm() {
@@ -42,14 +45,19 @@ export function ContractForm() {
 
   const [form, setForm] = useState<FormState>(empty);
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<CategoryMeta[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     void api<Counterparty[]>("/counterparties").then(setCounterparties);
-    void api<Category[]>("/meta/categories").then(setCategories);
+    void api<CategoryMeta[]>("/meta/categories").then(setCategories);
   }, []);
+
+  const categoryGroups = categories.reduce<Record<string, CategoryMeta[]>>((acc, c) => {
+    (acc[c.group] ??= []).push(c);
+    return acc;
+  }, {});
 
   useEffect(() => {
     if (!id) return;
@@ -59,14 +67,14 @@ export function ContractForm() {
           title: c.title,
           status: c.status,
           counterparty_id: c.counterparty?.id ?? "",
-          category_id: c.category?.id ?? "",
+          category: c.category ?? "",
           tags: c.tags.join(", "),
           effective_date: c.effective_date ?? "",
           expiry_date: c.expiry_date ?? "",
           notice_days: c.notice_days?.toString() ?? "",
           notes: c.notes ?? "",
           value: c.value ?? "",
-          currency: c.currency ?? "",
+          currency: CURRENCIES.includes(c.currency ?? "") ? (c.currency as string) : "EUR",
         }),
       )
       .catch((e) => setError(e.message));
@@ -83,7 +91,7 @@ export function ContractForm() {
       title: form.title,
       status: form.status,
       counterparty_id: form.counterparty_id || null,
-      category_id: form.category_id || null,
+      category: form.category || null,
       tags: form.tags
         .split(",")
         .map((t) => t.trim())
@@ -93,7 +101,7 @@ export function ContractForm() {
       notice_days: form.notice_days === "" ? null : Number(form.notice_days),
       notes: form.notes || null,
       value: form.value === "" ? null : form.value,
-      currency: form.currency || null,
+      currency: form.currency,
     };
     try {
       const saved = editing
@@ -140,12 +148,16 @@ export function ContractForm() {
           </div>
           <div>
             <label>{t("contractForm.category")}</label>
-            <select value={form.category_id} onChange={set("category_id")}>
+            <select value={form.category} onChange={set("category")}>
               <option value="">{t("contractForm.none")}</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
+              {Object.entries(categoryGroups).map(([group, cats]) => (
+                <optgroup key={group} label={groupLabel(t, group)}>
+                  {cats.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {categoryLabel(t, c.key)}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
@@ -171,7 +183,13 @@ export function ContractForm() {
           </div>
           <div>
             <label>{t("contractForm.currency")}</label>
-            <input value={form.currency} onChange={set("currency")} placeholder={t("contractForm.currencyPlaceholder")} maxLength={3} />
+            <select value={form.currency} onChange={set("currency")}>
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="full">
             <label>{t("contractForm.notes")}</label>

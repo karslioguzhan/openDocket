@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import type { Dashboard } from "../types";
-import { DaysLeft, ExpiryLabel, RoleBadge } from "../components/ui";
+import { DaysLeft, ExpiryLabel, RoleBadge, categoryLabel } from "../components/ui";
 
 export function Dashboard() {
   const { t } = useTranslation();
@@ -101,8 +101,8 @@ export function Dashboard() {
             <div className="muted">{t("dashboard.noCategories")}</div>
           ) : (
             data.category_counts.map((c) => (
-              <div key={c.name} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
-                <span>{c.name}</span>
+              <div key={c.key} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
+                <span>{categoryLabel(t, c.key)}</span>
                 <strong>{c.count}</strong>
               </div>
             ))

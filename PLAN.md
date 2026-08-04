@@ -14,7 +14,7 @@
 - **Soft delete / trash** (recoverable), purge after 30 days.
 
 **Domain model**
-- **Contract**: title, status (`Draft`/`Active`/`Expired`/`Terminated`), counterparty (FK), effective date, expiry/renewal date, notice-period days, notes, optional value + currency, category (user-defined label), tags, owner, shared-with ACL, `deleted_at`.
+- **Contract**: title, status (`Draft`/`Active`/`Expired`/`Terminated`), counterparty (FK), effective date, expiry/renewal date, notice-period days, notes, optional value + currency, category (**predefined enum**, grouped; stored as key string, labels localized in UI), tags, owner, shared-with ACL, `deleted_at`.
 - **Counterparty**: structured entity (name + optional contact/notes) — enables "all contracts with Acme".
 - **Files**: multiple per contract (PDF/image/docx/odt, 25 MB cap), original name + MIME stored.
 - Renewal = duplicate + update dates (not a status).

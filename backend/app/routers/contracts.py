@@ -4,7 +4,7 @@ import uuid
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import and_, or_, select
+from sqlalchemy import String, and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,7 +16,16 @@ from app.dependencies import (
     get_accessible_contract,
     get_owned_contract,
 )
-from app.models import Category, Contract, ContractStatus, Counterparty, Share, Tag, User, contract_tags
+from app.models import (
+    Contract,
+    ContractCategory,
+    ContractStatus,
+    Counterparty,
+    Share,
+    Tag,
+    User,
+    contract_tags,
+)
 from app.schemas import (
     ContractCreate,
     ContractOut,
@@ -48,21 +57,17 @@ async def _resolve_tags(session: AsyncSession, user: User, names: list[str]) -> 
     return tags
 
 
-async def _validate_refs(session: AsyncSession, user: User, counterparty_id, category_id):
+async def _validate_refs(session: AsyncSession, user: User, counterparty_id):
     if counterparty_id is not None:
         cp = await session.get(Counterparty, counterparty_id)
         if cp is None or cp.owner_id != user.id:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unknown counterparty.")
-    if category_id is not None:
-        cat = await session.get(Category, category_id)
-        if cat is None or cat.owner_id != user.id:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unknown category.")
 
 
 @router.get("", response_model=list[ContractOut])
 async def list_contracts(
     status_filter: ContractStatus | None = Query(default=None, alias="status"),
-    category_id: uuid.UUID | None = None,
+    category: ContractCategory | None = None,
     counterparty_id: uuid.UUID | None = None,
     tag: str | None = None,
     search: str | None = None,
@@ -74,16 +79,14 @@ async def list_contracts(
     stmt = accessible_contracts_query(user, include_deleted=trashed)
     if trashed:
         stmt = stmt.where(Contract.owner_id == user.id)
-    stmt = (
-        stmt.options(*CONTRACT_LOAD_OPTIONS)
-        .outerjoin(Counterparty, Contract.counterparty_id == Counterparty.id)
-        .outerjoin(Category, Contract.category_id == Category.id)
+    stmt = stmt.options(*CONTRACT_LOAD_OPTIONS).outerjoin(
+        Counterparty, Contract.counterparty_id == Counterparty.id
     )
 
     if status_filter is not None:
         stmt = stmt.where(Contract.status == status_filter)
-    if category_id is not None:
-        stmt = stmt.where(Contract.category_id == category_id)
+    if category is not None:
+        stmt = stmt.where(Contract.category == category)
     if counterparty_id is not None:
         stmt = stmt.where(Contract.counterparty_id == counterparty_id)
     if tag:
@@ -101,7 +104,7 @@ async def list_contracts(
                 Contract.title.ilike(like),
                 Contract.notes.ilike(like),
                 Counterparty.name.ilike(like),
-                Category.name.ilike(like),
+                Contract.category.cast(String).ilike(like),
                 Contract.id.in_(
                     select(contract_tags.c.contract_id).join(
                         Tag, Tag.id == contract_tags.c.tag_id
@@ -132,13 +135,13 @@ async def create_contract(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_session),
 ):
-    await _validate_refs(session, user, payload.counterparty_id, payload.category_id)
+    await _validate_refs(session, user, payload.counterparty_id)
     contract = Contract(
         owner_id=user.id,
         title=payload.title,
         status=payload.status,
         counterparty_id=payload.counterparty_id,
-        category_id=payload.category_id,
+        category=payload.category,
         effective_date=payload.effective_date,
         expiry_date=payload.expiry_date,
         notice_days=payload.notice_days,
@@ -150,7 +153,7 @@ async def create_contract(
         contract.tags = await _resolve_tags(session, user, payload.tags)
     session.add(contract)
     await session.commit()
-    await session.refresh(contract, attribute_names=["files", "shares", "tags", "counterparty", "category"])
+    await session.refresh(contract, attribute_names=["files", "shares", "tags", "counterparty"])
     contract._role = "owner"
     return contract_to_out(contract)
 
@@ -170,14 +173,14 @@ async def update_contract(
     session: AsyncSession = Depends(get_session),
 ):
     data = payload.model_dump(exclude_unset=True)
-    if "counterparty_id" in data or "category_id" in data:
-        await _validate_refs(session, user, data.get("counterparty_id"), data.get("category_id"))
+    if "counterparty_id" in data:
+        await _validate_refs(session, user, data.get("counterparty_id"))
     if "tags" in data:
         contract.tags = await _resolve_tags(session, user, data.pop("tags") or [])
     for field, value in data.items():
         setattr(contract, field, value)
     await session.commit()
-    await session.refresh(contract, attribute_names=["files", "shares", "tags", "counterparty", "category"])
+    await session.refresh(contract, attribute_names=["files", "shares", "tags", "counterparty"])
     contract._role = "owner"
     return contract_to_out(contract)
 
@@ -214,7 +217,7 @@ async def duplicate_contract(
         title=f"{contract.title} (copy)",
         status=ContractStatus.draft,
         counterparty_id=contract.counterparty_id,
-        category_id=contract.category_id,
+        category=contract.category,
         effective_date=contract.effective_date,
         expiry_date=contract.expiry_date,
         notice_days=contract.notice_days,
@@ -225,7 +228,7 @@ async def duplicate_contract(
     copy.tags = list(contract.tags)
     session.add(copy)
     await session.commit()
-    await session.refresh(copy, attribute_names=["files", "shares", "tags", "counterparty", "category"])
+    await session.refresh(copy, attribute_names=["files", "shares", "tags", "counterparty"])
     copy._role = "owner"
     return contract_to_out(copy)
 

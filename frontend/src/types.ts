@@ -15,9 +15,9 @@ export interface Counterparty {
   created_at: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
+export interface CategoryMeta {
+  key: string;
+  group: string;
 }
 
 export interface Tag {
@@ -50,7 +50,7 @@ export interface Contract {
   role: "owner" | "viewer";
   owner_id: string;
   counterparty: Counterparty | null;
-  category: Category | null;
+  category: string | null;
   tags: string[];
   effective_date: string | null;
   expiry_date: string | null;
@@ -68,14 +68,14 @@ export interface Contract {
 export interface Dashboard {
   expiring_soon: Contract[];
   status_counts: Record<string, number>;
-  category_counts: { name: string; count: number }[];
+  category_counts: { key: string; count: number }[];
 }
 
 export interface ContractPayload {
   title: string;
   status: ContractStatus;
   counterparty_id?: string | null;
-  category_id?: string | null;
+  category?: string | null;
   tags?: string[];
   effective_date?: string | null;
   expiry_date?: string | null;

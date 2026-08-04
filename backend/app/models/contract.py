@@ -31,6 +31,85 @@ class ContractStatus(str, enum.Enum):
     terminated = "terminated"
 
 
+class ContractCategory(str, enum.Enum):
+    kfz_haftpflicht = "kfz_haftpflicht"
+    kfz_teilkasko = "kfz_teilkasko"
+    kfz_vollkasko = "kfz_vollkasko"
+    kfz_schutzbrief = "kfz_schutzbrief"
+    motorrad = "motorrad"
+    fahrrad = "fahrrad"
+    privathaftpflicht = "privathaftpflicht"
+    tierhalterhaftpflicht = "tierhalterhaftpflicht"
+    haus_haftpflicht = "haus_haftpflicht"
+    berufshaftpflicht = "berufshaftpflicht"
+    gesetzliche_kv = "gesetzliche_kv"
+    private_kv = "private_kv"
+    kv_zusatz = "kv_zusatz"
+    zahnzusatz = "zahnzusatz"
+    pflegezusatz = "pflegezusatz"
+    risikoleben = "risikoleben"
+    rentenversicherung = "rentenversicherung"
+    altersvorsorge = "altersvorsorge"
+    berufsunfaehigkeit = "berufsunfaehigkeit"
+    unfall = "unfall"
+    kinderunfall = "kinderunfall"
+    insassenunfall = "insassenunfall"
+    wohngebaeude = "wohngebaeude"
+    hausrat = "hausrat"
+    elementar = "elementar"
+    glas = "glas"
+    rechtsschutz_privat = "rechtsschutz_privat"
+    rechtsschutz_verkehr = "rechtsschutz_verkehr"
+    rechtsschutz_miet_arbeit = "rechtsschutz_miet_arbeit"
+    mietvertrag = "mietvertrag"
+    mobilfunk_internet = "mobilfunk_internet"
+    energie = "energie"
+    kredit = "kredit"
+    mitgliedschaft = "mitgliedschaft"
+    garantie_wartung = "garantie_wartung"
+    sonstiges = "sonstiges"
+
+
+CATEGORY_GROUPS: dict[ContractCategory, str] = {
+    ContractCategory.kfz_haftpflicht: "kfz",
+    ContractCategory.kfz_teilkasko: "kfz",
+    ContractCategory.kfz_vollkasko: "kfz",
+    ContractCategory.kfz_schutzbrief: "kfz",
+    ContractCategory.motorrad: "kfz",
+    ContractCategory.fahrrad: "kfz",
+    ContractCategory.privathaftpflicht: "haftpflicht",
+    ContractCategory.tierhalterhaftpflicht: "haftpflicht",
+    ContractCategory.haus_haftpflicht: "haftpflicht",
+    ContractCategory.berufshaftpflicht: "haftpflicht",
+    ContractCategory.gesetzliche_kv: "kranken",
+    ContractCategory.private_kv: "kranken",
+    ContractCategory.kv_zusatz: "kranken",
+    ContractCategory.zahnzusatz: "kranken",
+    ContractCategory.pflegezusatz: "kranken",
+    ContractCategory.risikoleben: "vorsorge",
+    ContractCategory.rentenversicherung: "vorsorge",
+    ContractCategory.altersvorsorge: "vorsorge",
+    ContractCategory.berufsunfaehigkeit: "vorsorge",
+    ContractCategory.unfall: "unfall",
+    ContractCategory.kinderunfall: "unfall",
+    ContractCategory.insassenunfall: "unfall",
+    ContractCategory.wohngebaeude: "sach",
+    ContractCategory.hausrat: "sach",
+    ContractCategory.elementar: "sach",
+    ContractCategory.glas: "sach",
+    ContractCategory.rechtsschutz_privat: "rechtsschutz",
+    ContractCategory.rechtsschutz_verkehr: "rechtsschutz",
+    ContractCategory.rechtsschutz_miet_arbeit: "rechtsschutz",
+    ContractCategory.mietvertrag: "sonstige",
+    ContractCategory.mobilfunk_internet: "sonstige",
+    ContractCategory.energie: "sonstige",
+    ContractCategory.kredit: "sonstige",
+    ContractCategory.mitgliedschaft: "sonstige",
+    ContractCategory.garantie_wartung: "sonstige",
+    ContractCategory.sonstiges: "sonstige",
+}
+
+
 contract_tags = Table(
     "contract_tags",
     Base.metadata,
@@ -54,8 +133,10 @@ class Contract(TimestampMixin, Base):
     counterparty_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("counterparties.id", ondelete="set null"), nullable=True
     )
-    category_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="set null"), nullable=True
+    category: Mapped[ContractCategory | None] = mapped_column(
+        Enum(ContractCategory, name="contract_category", native_enum=False, length=40),
+        nullable=True,
+        index=True,
     )
 
     effective_date: Mapped[datetime | None] = mapped_column(Date, nullable=True)
@@ -71,7 +152,6 @@ class Contract(TimestampMixin, Base):
 
     owner: Mapped["User"] = relationship("User", back_populates="contracts")
     counterparty: Mapped["Counterparty | None"] = relationship("Counterparty", back_populates="contracts")
-    category: Mapped["Category | None"] = relationship("Category", back_populates="contracts")
     tags: Mapped[list["Tag"]] = relationship("Tag", secondary=contract_tags, back_populates="contracts")
     files: Mapped[list["ContractFile"]] = relationship(
         "ContractFile", back_populates="contract", cascade="all, delete-orphan"
@@ -95,20 +175,6 @@ class Counterparty(TimestampMixin, Base):
 
     owner: Mapped["User"] = relationship("User", back_populates="counterparties")
     contracts: Mapped[list["Contract"]] = relationship("Contract", back_populates="counterparty")
-
-
-class Category(TimestampMixin, Base):
-    __tablename__ = "categories"
-    __table_args__ = (UniqueConstraint("owner_id", "name", name="uq_categories_owner_name"),)
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String(80), nullable=False)
-    owner_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
-    )
-
-    owner: Mapped["User"] = relationship("User", back_populates="categories")
-    contracts: Mapped[list["Contract"]] = relationship("Contract", back_populates="category")
 
 
 class Tag(TimestampMixin, Base):

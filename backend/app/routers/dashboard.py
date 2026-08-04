@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_session
 from app.dependencies import CONTRACT_LOAD_OPTIONS, accessible_contracts_query, current_active_user
-from app.models import Category, Contract, User
+from app.models import Contract, User
 from app.schemas import ContractOut, DashboardOut
 from app.services.serializers import contract_to_out
 
@@ -47,18 +47,27 @@ async def dashboard(
 
     category_rows = (
         await session.execute(
-            select(Category.name, func.count(Contract.id))
-            .join(Contract, Contract.category_id == Category.id)
+            select(Contract.category, func.count(Contract.id))
             .where(Contract.id.in_(accessible_ids))
-            .group_by(Category.name)
+            .group_by(Contract.category)
             .order_by(func.count(Contract.id).desc())
         )
     ).all()
 
+    category_counts = []
+    uncategorized = 0
+    for cat, count in category_rows:
+        if cat is None:
+            uncategorized += count
+        else:
+            category_counts.append({"key": cat.value, "count": count})
+    if uncategorized:
+        category_counts.append({"key": "uncategorized", "count": uncategorized})
+
     return DashboardOut(
         expiring_soon=[_serialize(c, user.id) for c in expiring],
         status_counts={k.value: v for k, v in status_counts.items()},
-        category_counts=[{"name": name, "count": count} for name, count in category_rows],
+        category_counts=category_counts,
     )
 
 

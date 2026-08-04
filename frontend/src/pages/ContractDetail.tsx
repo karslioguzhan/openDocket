@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import type { Contract, ContractFile } from "../types";
-import { ExpiryLabel, StatusBadge, formatBytes, valueLabel } from "../components/ui";
+import { ExpiryLabel, StatusBadge, categoryLabel, formatBytes, valueLabel } from "../components/ui";
 
 export function ContractDetail() {
   const { id } = useParams() as { id: string };
@@ -120,7 +120,7 @@ export function ContractDetail() {
           </div>
           <div className="stat">
             <div className="lbl">{t("common.category")}</div>
-            <div>{contract.category?.name ?? "—"}</div>
+            <div>{contract.category ? categoryLabel(t, contract.category) : "—"}</div>
           </div>
           <div className="stat">
             <div className="lbl">{t("contractDetail.effectiveDate")}</div>

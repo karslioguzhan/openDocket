@@ -55,20 +55,30 @@ async def test_update(client, owner, login):
 
 async def test_tags_and_category(client, owner, login):
     await login(client, "owner@example.com")
-    cat = await client.post("/api/meta/categories", json={"name": "Utilities"})
-    assert cat.status_code == 201
+    cats = (await client.get("/api/meta/categories")).json()
+    keys = [c["key"] for c in cats]
+    assert "privathaftpflicht" in keys
+    assert "sonstiges" in keys
+    privathaftpflicht = next(c for c in cats if c["key"] == "privathaftpflicht")
+    assert privathaftpflicht["group"] == "haftpflicht"
 
     contract = await make_contract(
-        client, tags=["home", "monthly"], category_id=cat.json()["id"]
+        client, tags=["home", "monthly"], category="privathaftpflicht"
     )
     assert set(contract["tags"]) == {"home", "monthly"}
-    assert contract["category"]["name"] == "Utilities"
+    assert contract["category"] == "privathaftpflicht"
 
     # update tags (replace)
     resp = await client.patch(
         f"/api/contracts/{contract['id']}", json={"tags": ["work"]}
     )
     assert resp.json()["tags"] == ["work"]
+
+    # invalid category rejected
+    resp = await client.patch(
+        f"/api/contracts/{contract['id']}", json={"category": "not_a_category"}
+    )
+    assert resp.status_code == 422
 
 
 async def test_trash_restore(client, owner, login):

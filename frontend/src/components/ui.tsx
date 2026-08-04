@@ -1,5 +1,20 @@
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { ContractStatus } from "../types";
+
+export function categoryLabel(t: TFunction, category: string | null): string {
+  if (!category) return "—";
+  return t(`categories.${category}`, { defaultValue: category });
+}
+
+export function groupLabel(t: TFunction, group: string): string {
+  return t(`categoryGroups.${group}`, { defaultValue: group });
+}
+
+export function CategoryLabel({ category }: { category: string | null }) {
+  const { t } = useTranslation();
+  return <>{categoryLabel(t, category)}</>;
+}
 
 export function StatusBadge({ status }: { status: ContractStatus }) {
   const { t } = useTranslation();

@@ -71,7 +71,7 @@ async def export_all(
                     if contract.counterparty
                     else None
                 ),
-                "category": contract.category.name if contract.category else None,
+                "category": contract.category.value if contract.category else None,
                 "tags": [t.name for t in contract.tags],
                 "files": [
                     {

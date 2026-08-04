@@ -18,6 +18,5 @@ class User(SQLAlchemyBaseUserTableUUID, TimestampMixin, Base):
     counterparties: Mapped[list["Counterparty"]] = relationship(
         "Counterparty", back_populates="owner"
     )
-    categories: Mapped[list["Category"]] = relationship("Category", back_populates="owner")
     tags: Mapped[list["Tag"]] = relationship("Tag", back_populates="owner")
     shares: Mapped[list["Share"]] = relationship("Share", back_populates="user")

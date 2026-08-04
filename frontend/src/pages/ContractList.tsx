@@ -2,35 +2,47 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
-import type { Contract, ContractStatus } from "../types";
-import { ExpiryLabel, RoleBadge, valueLabel } from "../components/ui";
+import { categoryLabel, ExpiryLabel, groupLabel, RoleBadge, valueLabel } from "../components/ui";
+import type { CategoryMeta, Contract, ContractStatus } from "../types";
 
 const STATUSES: Array<ContractStatus | ""> = ["", "draft", "active", "expired", "terminated"];
 
 export function ContractList() {
   const { t } = useTranslation();
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [categories, setCategories] = useState<CategoryMeta[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"" | ContractStatus>("");
+  const [category, setCategory] = useState("");
   const [debounced, setDebounced] = useState("");
+
+  useEffect(() => {
+    void api<CategoryMeta[]>("/meta/categories").then(setCategories);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 300);
     return () => clearTimeout(t);
   }, [search]);
 
+  const categoryGroups = categories.reduce<Record<string, CategoryMeta[]>>((acc, c) => {
+    (acc[c.group] ??= []).push(c);
+    return acc;
+  }, {});
+
   const load = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (debounced) params.set("search", debounced);
       if (status) params.set("status", status);
+      if (category) params.set("category", category);
       const rows = await api<Contract[]>(`/contracts?${params.toString()}`);
       setContracts(rows);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("contracts.loadFailed"));
     }
-  }, [debounced, status]);
+  }, [debounced, status, category]);
 
   useEffect(() => {
     void load();
@@ -57,6 +69,18 @@ export function ContractList() {
             <option key={s || "all"} value={s}>
               {s === "" ? t("contracts.allStatuses") : t(`status.${s}`)}
             </option>
+          ))}
+        </select>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: 220 }}>
+          <option value="">{t("contractForm.category")}</option>
+          {Object.entries(categoryGroups).map(([group, cats]) => (
+            <optgroup key={group} label={groupLabel(t, group)}>
+              {cats.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {categoryLabel(t, c.key)}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </div>
@@ -89,7 +113,7 @@ export function ContractList() {
                     <span className={`badge ${c.status}`}>{t(`status.${c.status}`)}</span>
                   </td>
                   <td>{c.counterparty?.name ?? "—"}</td>
-                  <td>{c.category?.name ?? "—"}</td>
+                  <td>{c.category ? categoryLabel(t, c.category) : "—"}</td>
                   <td>
                     <ExpiryLabel expiry={c.expiry_date} />
                   </td>

@@ -27,9 +27,10 @@ async def test_dashboard_counts_and_expiring(client, owner, login):
 
 async def test_dashboard_category_rollup(client, owner, login):
     await login(client, "owner@example.com")
-    cat = (await client.post("/api/meta/categories", json={"name": "Insurance"})).json()
-    await make_contract(client, title="Home ins", category_id=cat["id"])
-    await make_contract(client, title="Car ins", category_id=cat["id"])
+    await make_contract(client, title="Home ins", category="hausrat")
+    await make_contract(client, title="Car ins", category="hausrat")
+    await make_contract(client, title="No cat")
 
     body = (await client.get("/api/dashboard")).json()
-    assert {"name": "Insurance", "count": 2} in body["category_counts"]
+    assert {"key": "hausrat", "count": 2} in body["category_counts"]
+    assert {"key": "uncategorized", "count": 1} in body["category_counts"]
