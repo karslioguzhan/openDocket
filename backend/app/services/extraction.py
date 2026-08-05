@@ -156,7 +156,7 @@ def _extract_pdf(data: bytes) -> str:
     try:
         import pypdf
 
-        reader = pypdf.PdfReader(data)
+        reader = pypdf.PdfReader(io.BytesIO(data))
         text = "\n".join((page.extract_text() or "") for page in reader.pages)
     except Exception:
         text = ""

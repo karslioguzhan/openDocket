@@ -117,7 +117,8 @@ export function ContractForm() {
   };
 
   const onScanFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setScanFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])]);
+    const files = Array.from(e.target.files ?? []);
+    setScanFiles((prev) => [...prev, ...files]);
     e.target.value = "";
   };
 
