@@ -73,6 +73,19 @@ _NOTICE_PATTERNS = [
     re.compile(r"kündigbar|kuendigbar\s+(?:mit|innerhalb\s+von)?\s*(\d+)\s*(?:tagen?|wochen|monaten)", re.IGNORECASE),
 ]
 
+_POLICY_NO_LABELS = (
+    r"versicherungsnummer|versicherungs\s*nr\.?|versicherungsschein\s*nr\.?|"
+    r"policennummer|policen\s*nr\.?|police\s*nr\.?|vertragsnummer|vertrags\s*nr\.?|"
+    r"policy\s*(?:number|no\.?|#)|contract\s*(?:number|no\.?|#)|"
+    r"kundennummer|customer\s*(?:number|no\.?|#)|mitgliedsnummer|member\s*(?:id|number)"
+)
+
+_POLICY_NO_RE = re.compile(
+    r"\b(?:" + _POLICY_NO_LABELS + r")\s*[:.\-#]?\s*"
+    r"(?P<value>[A-Z0-9][A-Z0-9/\-._]{3,39})\b",
+    re.IGNORECASE,
+)
+
 _SECTION_LABELS = {
     "vermiet": "vermiet",
     "mieter": "mieter",
@@ -225,6 +238,7 @@ def _parse_heuristically(text: str, filename: str) -> dict[str, Any]:
     result: dict[str, Any] = {
         "title": _detect_title(text, filename),
         "counterparty_name": _detect_counterparty(text),
+        "versicherungsnummer": _detect_policy_number(text),
         "effective_date": None,
         "expiry_date": None,
         "notice_days": None,
@@ -412,6 +426,19 @@ def _detect_counterparty(text: str) -> str | None:
     return None
 
 
+def _detect_policy_number(text: str) -> str | None:
+    """Find an insurance/policy/contract number after a matching label."""
+    for match in _POLICY_NO_RE.finditer(text):
+        value = match.group("value").strip().strip(":.,;-")
+        if _DATE_TOKEN_RE.search(value):
+            continue
+        if _AMOUNT_RE[0].search(value) or _AMOUNT_RE[1].search(value):
+            continue
+        if len(value) >= 4:
+            return value[:40]
+    return None
+
+
 def _parse_with_llm(text: str) -> dict[str, Any]:
     settings = get_settings()
     if not (settings.llm_base_url and settings.llm_api_key and settings.llm_model):
@@ -421,6 +448,8 @@ def _parse_with_llm(text: str) -> dict[str, Any]:
         "You extract structured data from contract documents. "
         "Return ONLY a valid JSON object with these keys: "
         "title (string or null), counterparty_name (string or null), "
+        "versicherungsnummer (string or null, the insurance/policy/contract number, "
+        "also known as Versicherungsnummer, Versicherungsnr., Policennummer or Vertragsnummer), "
         "effective_date (YYYY-MM-DD or null), expiry_date (YYYY-MM-DD or null), "
         "notice_days (integer or null), value (number or null), "
         "currency (ISO 4217 code or null). "
@@ -462,6 +491,8 @@ def _normalize_llm_result(content: str) -> dict[str, Any]:
         result["title"] = data["title"].strip()[:200]
     if isinstance(data.get("counterparty_name"), str) and data["counterparty_name"].strip():
         result["counterparty_name"] = data["counterparty_name"].strip()[:200]
+    if isinstance(data.get("versicherungsnummer"), str) and data["versicherungsnummer"].strip():
+        result["versicherungsnummer"] = data["versicherungsnummer"].strip()[:40]
 
     for key in ("effective_date", "expiry_date"):
         raw = data.get(key)

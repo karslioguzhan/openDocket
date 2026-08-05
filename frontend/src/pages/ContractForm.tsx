@@ -23,6 +23,8 @@ interface FormState {
   title: string;
   status: ContractStatus;
   counterparty_id: string;
+  counterparty_name: string;
+  versicherungsnummer: string;
   category: string;
   tags: string;
   effective_date: string;
@@ -37,6 +39,8 @@ const empty: FormState = {
   title: "",
   status: "draft",
   counterparty_id: "",
+  counterparty_name: "",
+  versicherungsnummer: "",
   category: "",
   tags: "",
   effective_date: "",
@@ -83,6 +87,8 @@ export function ContractForm() {
           title: c.title,
           status: c.status,
           counterparty_id: c.counterparty?.id ?? "",
+          counterparty_name: "",
+          versicherungsnummer: c.versicherungsnummer ?? "",
           category: c.category ?? "",
           tags: c.tags.join(", "),
           effective_date: c.effective_date ?? "",
@@ -131,10 +137,13 @@ export function ContractForm() {
     try {
       const res = await api<ExtractionResult>("/contracts/extract", { method: "POST", body });
       setExtraction(res);
+      const matched = matchCounterparty(res.counterparty_name);
       setForm({
         ...empty,
         title: res.title ?? "",
-        counterparty_id: matchCounterparty(res.counterparty_name),
+        counterparty_id: matched,
+        counterparty_name: matched ? "" : res.counterparty_name ?? "",
+        versicherungsnummer: res.versicherungsnummer ?? "",
         effective_date: res.effective_date ?? "",
         expiry_date: res.expiry_date ?? "",
         notice_days: res.notice_days?.toString() ?? "",
@@ -157,6 +166,8 @@ export function ContractForm() {
       title: form.title,
       status: form.status,
       counterparty_id: form.counterparty_id || null,
+      counterparty_name: form.counterparty_id ? null : form.counterparty_name || null,
+      versicherungsnummer: form.versicherungsnummer || null,
       category: form.category || null,
       tags: form.tags
         .split(",")
@@ -267,8 +278,23 @@ export function ContractForm() {
               </select>
             </div>
             <div>
+              <label>{t("contractForm.versicherungsnummer")}</label>
+              <input
+                value={form.versicherungsnummer}
+                onChange={set("versicherungsnummer")}
+                placeholder={t("contractForm.versicherungsnummerPlaceholder")}
+                maxLength={40}
+              />
+            </div>
+            <div>
               <label>{t("contractForm.counterparty")}</label>
-              <select value={form.counterparty_id} onChange={set("counterparty_id")}>
+              <select
+                value={form.counterparty_id}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setForm((f) => ({ ...f, counterparty_id: val, counterparty_name: val ? "" : f.counterparty_name }));
+                }}
+              >
                 <option value="">{t("contractForm.none")}</option>
                 {counterparties.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -280,6 +306,23 @@ export function ContractForm() {
                 <div className="muted" style={{ marginTop: 6 }}>
                   {t("contractForm.detectedCounterparty", { name: extraction.counterparty_name })}
                 </div>
+              )}
+              {!form.counterparty_id && (
+                <>
+                  <label style={{ marginTop: 12 }}>{t("contractForm.newCounterparty")}</label>
+                  <input
+                    value={form.counterparty_name}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, counterparty_name: e.target.value, counterparty_id: "" }))
+                    }
+                    placeholder={t("contractForm.newCounterpartyPlaceholder")}
+                  />
+                  {form.counterparty_name && (
+                    <div className="muted" style={{ marginTop: 6 }}>
+                      {t("contractForm.willCreateCounterparty", { name: form.counterparty_name })}
+                    </div>
+                  )}
+                </>
               )}
             </div>
             <div>

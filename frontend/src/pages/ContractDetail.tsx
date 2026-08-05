@@ -119,6 +119,10 @@ export function ContractDetail() {
             <div>{contract.counterparty?.name ?? "—"}</div>
           </div>
           <div className="stat">
+            <div className="lbl">{t("contractDetail.versicherungsnummer")}</div>
+            <div>{contract.versicherungsnummer ?? "—"}</div>
+          </div>
+          <div className="stat">
             <div className="lbl">{t("common.category")}</div>
             <div>{contract.category ? categoryLabel(t, contract.category) : "—"}</div>
           </div>

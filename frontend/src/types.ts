@@ -49,6 +49,7 @@ export interface Contract {
   status: ContractStatus;
   role: "owner" | "viewer";
   owner_id: string;
+  versicherungsnummer: string | null;
   counterparty: Counterparty | null;
   category: string | null;
   tags: string[];
@@ -75,6 +76,8 @@ export interface ContractPayload {
   title: string;
   status: ContractStatus;
   counterparty_id?: string | null;
+  counterparty_name?: string | null;
+  versicherungsnummer?: string | null;
   category?: string | null;
   tags?: string[];
   effective_date?: string | null;
@@ -94,6 +97,7 @@ export interface ExtractedFile {
 export interface ExtractionResult {
   title: string | null;
   counterparty_name: string | null;
+  versicherungsnummer: string | null;
   effective_date: string | null;
   expiry_date: string | null;
   notice_days: number | null;

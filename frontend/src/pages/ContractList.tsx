@@ -95,6 +95,7 @@ export function ContractList() {
             <thead>
               <tr>
                 <th>{t("common.title")}</th>
+                <th>{t("contractDetail.versicherungsnummer")}</th>
                 <th>{t("common.status")}</th>
                 <th>{t("common.counterparty")}</th>
                 <th>{t("common.category")}</th>
@@ -109,6 +110,7 @@ export function ContractList() {
                   <td>
                     <Link to={`/contracts/${c.id}`}>{c.title}</Link> <RoleBadge role={c.role} />
                   </td>
+                  <td>{c.versicherungsnummer ?? "—"}</td>
                   <td>
                     <span className={`badge ${c.status}`}>{t(`status.${c.status}`)}</span>
                   </td>

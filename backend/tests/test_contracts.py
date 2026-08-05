@@ -107,3 +107,90 @@ async def test_duplicate(client, owner, login):
     assert body["title"] == "Car Insurance (copy)"
     assert body["status"] == "draft"
     assert body["id"] != contract["id"]
+
+
+async def test_versicherungsnummer_auto_generated(client, owner, login):
+    await login(client, "owner@example.com")
+    contract = await make_contract(client, title="Haftpflicht")
+    assert contract["versicherungsnummer"]
+    assert contract["versicherungsnummer"].startswith("VN-")
+    assert len(contract["versicherungsnummer"]) == 11
+
+
+async def test_versicherungsnummer_provided(client, owner, login):
+    await login(client, "owner@example.com")
+    contract = await make_contract(
+        client, title="Kranken", versicherungsnummer="K123456789"
+    )
+    assert contract["versicherungsnummer"] == "K123456789"
+
+
+async def test_versicherungsnummer_cleared_regenerates(client, owner, login):
+    await login(client, "owner@example.com")
+    contract = await make_contract(client, title="Kranken")
+    resp = await client.patch(
+        f"/api/contracts/{contract['id']}",
+        json={"versicherungsnummer": None},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["versicherungsnummer"]
+    assert body["versicherungsnummer"].startswith("VN-")
+    assert body["versicherungsnummer"] != contract["versicherungsnummer"]
+
+
+async def test_duplicate_generates_new_versicherungsnummer(client, owner, login):
+    await login(client, "owner@example.com")
+    contract = await make_contract(client, title="Car Insurance")
+    dup = await client.post(f"/api/contracts/{contract['id']}/duplicate")
+    body = dup.json()
+    assert body["versicherungsnummer"]
+    assert body["versicherungsnummer"] != contract["versicherungsnummer"]
+
+
+async def test_counterparty_auto_created_from_name(client, owner, login):
+    await login(client, "owner@example.com")
+    resp = await client.post(
+        "/api/contracts",
+        json={"title": "Handyvertrag", "status": "active", "counterparty_name": "Telekom GmbH"},
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["counterparty"] is not None
+    assert body["counterparty"]["name"] == "Telekom GmbH"
+
+    cps = await client.get("/api/counterparties")
+    assert len(cps.json()) == 1
+    assert cps.json()[0]["name"] == "Telekom GmbH"
+
+
+async def test_counterparty_name_reuses_existing(client, owner, login):
+    await login(client, "owner@example.com")
+    created = await client.post(
+        "/api/counterparties", json={"name": "Acme GmbH"}
+    )
+    assert created.status_code == 201
+    cp_id = created.json()["id"]
+
+    for name in ["acme gmbh", "Acme"]:
+        resp = await client.post(
+            "/api/contracts",
+            json={"title": "Agreement", "status": "active", "counterparty_name": name},
+        )
+        assert resp.status_code == 201, resp.text
+        assert resp.json()["counterparty"]["id"] == cp_id
+
+    cps = await client.get("/api/counterparties")
+    assert len(cps.json()) == 1
+
+
+async def test_counterparty_id_rejects_other_owners(client, owner, viewer, login):
+    await login(client, "owner@example.com")
+    other_cp = await client.post("/api/counterparties", json={"name": "Mine"})
+    other_id = other_cp.json()["id"]
+    await login(client, "viewer@example.com")
+    resp = await client.post(
+        "/api/contracts",
+        json={"title": "Nope", "status": "active", "counterparty_id": other_id},
+    )
+    assert resp.status_code == 400

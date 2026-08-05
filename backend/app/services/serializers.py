@@ -29,6 +29,7 @@ def contract_to_out(contract: Contract, include_shares: bool = True) -> Contract
         status=contract.status,
         role=role,
         owner_id=contract.owner_id,
+        versicherungsnummer=contract.versicherungsnummer,
         counterparty=(
             CounterpartyOut.model_validate(contract.counterparty)
             if contract.counterparty is not None

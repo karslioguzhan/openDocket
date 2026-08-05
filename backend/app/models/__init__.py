@@ -7,6 +7,7 @@ from app.models.contract import (
     Counterparty,
     Tag,
     contract_tags,
+    generate_versicherungsnummer,
 )
 from app.models.contract_file import ContractFile
 from app.models.share import Share, ShareRole
@@ -25,4 +26,5 @@ __all__ = [
     "Tag",
     "User",
     "contract_tags",
+    "generate_versicherungsnummer",
 ]

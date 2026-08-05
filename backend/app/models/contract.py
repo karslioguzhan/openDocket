@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import enum
+import secrets
+import string
 import uuid
 
 from sqlalchemy import (
@@ -118,6 +120,16 @@ contract_tags = Table(
 )
 
 
+_VN_ALPHABET = string.ascii_uppercase + string.digits
+_VN_AMBIGUOUS = {"0", "1", "O", "I", "L"}
+_VN_CHARS = "".join(c for c in _VN_ALPHABET if c not in _VN_AMBIGUOUS)
+
+
+def generate_versicherungsnummer() -> str:
+    """Return a human-friendly, collision-resistant insurance number like VN-7K2M4XQ9."""
+    return "VN-" + "".join(secrets.choice(_VN_CHARS) for _ in range(8))
+
+
 class Contract(TimestampMixin, Base):
     __tablename__ = "contracts"
 
@@ -125,6 +137,9 @@ class Contract(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     status: Mapped[ContractStatus] = mapped_column(
         Enum(ContractStatus, name="contract_status"), nullable=False, default=ContractStatus.draft
+    )
+    versicherungsnummer: Mapped[str] = mapped_column(
+        String(40), nullable=False, index=True, default=generate_versicherungsnummer
     )
 
     owner_id: Mapped[uuid.UUID] = mapped_column(

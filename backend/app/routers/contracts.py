@@ -4,7 +4,7 @@ import uuid
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import String, and_, or_, select
+from sqlalchemy import String, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -25,6 +25,7 @@ from app.models import (
     Tag,
     User,
     contract_tags,
+    generate_versicherungsnummer,
 )
 from app.schemas import (
     ContractCreate,
@@ -57,11 +58,42 @@ async def _resolve_tags(session: AsyncSession, user: User, names: list[str]) -> 
     return tags
 
 
-async def _validate_refs(session: AsyncSession, user: User, counterparty_id):
+async def _resolve_counterparty(
+    session: AsyncSession,
+    user: User,
+    counterparty_id: uuid.UUID | None,
+    counterparty_name: str | None,
+) -> uuid.UUID | None:
+    """Return a counterparty id: validate an explicit id or resolve/create by name."""
     if counterparty_id is not None:
         cp = await session.get(Counterparty, counterparty_id)
         if cp is None or cp.owner_id != user.id:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unknown counterparty.")
+        return counterparty_id
+
+    name = (counterparty_name or "").strip()
+    if not name:
+        return None
+
+    existing = await session.scalar(
+        select(Counterparty).where(
+            Counterparty.owner_id == user.id,
+            func.lower(Counterparty.name) == name.lower(),
+        )
+    )
+    if existing is None:
+        existing = await session.scalar(
+            select(Counterparty)
+            .where(Counterparty.owner_id == user.id, Counterparty.name.ilike(f"%{name}%"))
+            .order_by(func.length(Counterparty.name).asc())
+        )
+    if existing is not None:
+        return existing.id
+
+    cp = Counterparty(owner_id=user.id, name=name)
+    session.add(cp)
+    await session.flush()
+    return cp.id
 
 
 @router.get("", response_model=list[ContractOut])
@@ -135,12 +167,14 @@ async def create_contract(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_session),
 ):
-    await _validate_refs(session, user, payload.counterparty_id)
+    counterparty_id = await _resolve_counterparty(
+        session, user, payload.counterparty_id, payload.counterparty_name
+    )
     contract = Contract(
         owner_id=user.id,
         title=payload.title,
         status=payload.status,
-        counterparty_id=payload.counterparty_id,
+        counterparty_id=counterparty_id,
         category=payload.category,
         effective_date=payload.effective_date,
         expiry_date=payload.expiry_date,
@@ -149,6 +183,8 @@ async def create_contract(
         value=payload.value,
         currency=payload.currency,
     )
+    if payload.versicherungsnummer:
+        contract.versicherungsnummer = payload.versicherungsnummer
     if payload.tags:
         contract.tags = await _resolve_tags(session, user, payload.tags)
     session.add(contract)
@@ -173,8 +209,16 @@ async def update_contract(
     session: AsyncSession = Depends(get_session),
 ):
     data = payload.model_dump(exclude_unset=True)
-    if "counterparty_id" in data:
-        await _validate_refs(session, user, data.get("counterparty_id"))
+    if "counterparty_id" in data or "counterparty_name" in data:
+        data["counterparty_id"] = await _resolve_counterparty(
+            session,
+            user,
+            data.get("counterparty_id"),
+            data.get("counterparty_name"),
+        )
+    data.pop("counterparty_name", None)
+    if "versicherungsnummer" in data and not data["versicherungsnummer"]:
+        data["versicherungsnummer"] = generate_versicherungsnummer()
     if "tags" in data:
         contract.tags = await _resolve_tags(session, user, data.pop("tags") or [])
     for field, value in data.items():

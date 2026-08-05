@@ -8,6 +8,7 @@ from app.services import extraction
 
 CONTRACT_TEXT = """Telecom Services Agreement
 Customer: Acme GmbH
+Versicherungsnummer: 7-123-456-789
 This agreement is effective January 15, 2024 and expires on January 14, 2026.
 Either party may terminate with 60 days written notice.
 Monthly fee: $49.99 USD
@@ -32,6 +33,7 @@ async def test_extract_parses_txt(client, owner, login):
     data = resp.json()
     assert data["title"] == "Telecom Services Agreement"
     assert data["counterparty_name"] == "Acme GmbH"
+    assert data["versicherungsnummer"] == "7-123-456-789"
     assert data["effective_date"] == "2024-01-15"
     assert data["expiry_date"] == "2026-01-14"
     assert data["notice_days"] == 60
