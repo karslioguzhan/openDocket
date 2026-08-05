@@ -20,6 +20,7 @@ from app.routers import (
     export,
     extraction,
     files,
+    llm,
     meta,
     users,
 )
@@ -73,6 +74,7 @@ app.include_router(contracts.router)
 app.include_router(counterparties.router)
 app.include_router(meta.router)
 app.include_router(extraction.router)
+app.include_router(llm.router)
 app.include_router(files.router)
 app.include_router(dashboard.router)
 app.include_router(export.router)

@@ -212,8 +212,14 @@ def _ocr_image_bytes(img: Image.Image) -> str:
         return ""
 
 
-def parse_contract_documents(files: list[tuple[str, bytes]]) -> dict[str, Any]:
-    """Parse a list of (filename, bytes) into extracted contract fields."""
+def parse_contract_documents(
+    files: list[tuple[str, bytes]], llm_config: dict[str, str] | None = None
+) -> dict[str, Any]:
+    """Parse a list of (filename, bytes) into extracted contract fields.
+
+    ``llm_config`` optionally overrides the server-side LLM settings with
+    per-request values (``base_url``, ``api_key``, ``model``).
+    """
     texts: list[str] = []
     for name, data in files:
         text = extract_text_from_bytes(name, data)
@@ -225,7 +231,7 @@ def parse_contract_documents(files: list[tuple[str, bytes]]) -> dict[str, Any]:
         return {}
 
     heuristics = _parse_heuristically(combined, files[0][0] if files else "")
-    llm = _parse_with_llm(combined)
+    llm = _parse_with_llm(combined, llm_config=llm_config)
     result = {**heuristics}
     if llm:
         for key, value in llm.items():
@@ -439,9 +445,71 @@ def _detect_policy_number(text: str) -> str | None:
     return None
 
 
-def _parse_with_llm(text: str) -> dict[str, Any]:
+def call_chat_completion(
+    base_url: str,
+    api_key: str | None,
+    model: str,
+    system: str,
+    user_text: str,
+    timeout: float = 60,
+) -> str:
+    """Send an OpenAI-style chat completion and return the assistant's text.
+
+    Raises on transport/HTTP errors so callers can decide how to handle them.
+    """
+    headers = {}
+    api_key = (api_key or "").strip() or None
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    resp = httpx.post(
+        f"{base_url.rstrip('/')}/chat/completions",
+        headers=headers,
+        json={
+            "model": model,
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_text},
+            ],
+        },
+        timeout=timeout,
+    )
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        detail = _extract_llm_error(resp)
+        if detail:
+            raise httpx.HTTPStatusError(
+                f"HTTP {exc.response.status_code}: {detail}",
+                request=exc.request,
+                response=exc.response,
+            ) from exc
+        raise
+    return resp.json()["choices"][0]["message"]["content"]
+
+
+def _extract_llm_error(resp: httpx.Response) -> str | None:
+    """Pull the human-readable message from an OpenAI-compatible error body."""
+    try:
+        data = resp.json()
+    except ValueError:
+        return None
+    error = data.get("error")
+    if isinstance(error, str):
+        return error
+    if isinstance(error, dict):
+        message = error.get("message")
+        if message:
+            return str(message)
+    return None
+
+
+def _parse_with_llm(text: str, llm_config: dict[str, str] | None = None) -> dict[str, Any]:
     settings = get_settings()
-    if not (settings.llm_base_url and settings.llm_api_key and settings.llm_model):
+    base_url = (llm_config or {}).get("base_url") or settings.llm_base_url
+    api_key = (llm_config or {}).get("api_key") or settings.llm_api_key
+    model = (llm_config or {}).get("model") or settings.llm_model
+    if not (base_url and model):
         return {}
 
     system = (
@@ -456,21 +524,14 @@ def _parse_with_llm(text: str) -> dict[str, Any]:
         "Use null when a value cannot be determined from the text. Do not invent data."
     )
     try:
-        resp = httpx.post(
-            f"{settings.llm_base_url.rstrip('/')}/chat/completions",
-            headers={"Authorization": f"Bearer {settings.llm_api_key}"},
-            json={
-                "model": settings.llm_model,
-                "temperature": 0,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": f"Document text:\n{text[:12000]}"},
-                ],
-            },
-            timeout=60,
+        content = call_chat_completion(
+            base_url,
+            api_key,
+            model,
+            system,
+            f"Document text:\n{text[:12000]}",
+            timeout=120,
         )
-        resp.raise_for_status()
-        content = resp.json()["choices"][0]["message"]["content"]
     except Exception:
         return {}
 

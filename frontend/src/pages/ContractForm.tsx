@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import { categoryLabel, formatBytes, groupLabel } from "../components/ui";
+import { isLLMConfigured, loadLLMConfig } from "../llmConfig";
 import type {
   CategoryMeta,
   Contract,
@@ -68,6 +69,10 @@ export function ContractForm() {
   const [scanFiles, setScanFiles] = useState<File[]>([]);
   const [extraction, setExtraction] = useState<ExtractionResult | null>(null);
   const [extracting, setExtracting] = useState(false);
+  const [aiModel] = useState<string | null>(() => {
+    const cfg = loadLLMConfig();
+    return isLLMConfigured(cfg) ? cfg.model : null;
+  });
 
   useEffect(() => {
     void api<Counterparty[]>("/counterparties").then(setCounterparties);
@@ -134,6 +139,12 @@ export function ContractForm() {
     setError(null);
     const body = new FormData();
     for (const f of scanFiles) body.append("files", f);
+    const cfg = loadLLMConfig();
+    if (isLLMConfigured(cfg)) {
+      if (cfg.baseUrl) body.append("llm_base_url", cfg.baseUrl);
+      if (cfg.apiKey) body.append("llm_api_key", cfg.apiKey);
+      if (cfg.model) body.append("llm_model", cfg.model);
+    }
     try {
       const res = await api<ExtractionResult>("/contracts/extract", { method: "POST", body });
       setExtraction(res);
@@ -222,6 +233,11 @@ export function ContractForm() {
         <div className="card">
           <h2>{t("contractForm.scanStepTitle")}</h2>
           <p className="muted">{t("contractForm.scanStepHint")}</p>
+          <p className="muted" style={{ marginTop: 8 }}>
+            {aiModel
+              ? t("contractForm.aiEnabled", { model: aiModel })
+              : t("contractForm.aiDisabled")}
+          </p>
           <label className="btn secondary" style={{ marginTop: 12, display: "inline-block", cursor: "pointer" }}>
             {t("contractForm.scanFiles", { count: scanFiles.length })}
             <input type="file" accept={SCAN_ACCEPT} multiple style={{ display: "none" }} onChange={onScanFiles} />

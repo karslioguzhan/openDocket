@@ -105,3 +105,16 @@ export interface ExtractionResult {
   currency: string | null;
   files: ExtractedFile[];
 }
+
+export interface LLMConfig {
+  provider: string;
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+}
+
+export interface LLMTestResult {
+  ok: boolean;
+  error: string | null;
+  response: string | null;
+}

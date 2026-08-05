@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from app.dependencies import current_active_user
 from app.models import User
@@ -16,6 +16,9 @@ router = APIRouter(prefix="/api/contracts", tags=["extraction"])
 @router.post("/extract", response_model=ExtractionOut)
 async def extract_contract(
     files: list[UploadFile] = File(...),
+    llm_base_url: str | None = Form(default=None),
+    llm_api_key: str | None = Form(default=None),
+    llm_model: str | None = Form(default=None),
     user: User = Depends(current_active_user),
 ):
     """OCR / parse PDF or image uploads and return candidate contract fields."""
@@ -36,7 +39,16 @@ async def extract_contract(
             raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "File exceeds the 25 MB limit.")
         documents.append((f.filename or "file", contents))
 
-    parsed = parse_contract_documents(documents)
+    llm_config = {
+        key: value.strip()
+        for key, value in (
+            ("base_url", llm_base_url),
+            ("api_key", llm_api_key),
+            ("model", llm_model),
+        )
+        if value and value.strip()
+    }
+    parsed = parse_contract_documents(documents, llm_config=llm_config or None)
     if not parsed:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,

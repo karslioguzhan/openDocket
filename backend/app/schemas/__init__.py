@@ -186,6 +186,18 @@ class ShareCreate(BaseModel):
     email: EmailStr
 
 
+class LLMTestRequest(BaseModel):
+    base_url: str = Field(min_length=1, max_length=500)
+    api_key: str | None = None
+    model: str = Field(min_length=1, max_length=200)
+
+
+class LLMTestOut(BaseModel):
+    ok: bool
+    error: str | None = None
+    response: str | None = None
+
+
 class DashboardOut(BaseModel):
     expiring_soon: list[ContractOut]
     status_counts: dict[str, int]

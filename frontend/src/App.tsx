@@ -10,6 +10,7 @@ import { ContractForm } from "./pages/ContractForm";
 import { Counterparties } from "./pages/Counterparties";
 import { Trash } from "./pages/Trash";
 import { Admin } from "./pages/Admin";
+import { Settings } from "./pages/Settings";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="contracts/:id" element={<ContractDetail />} />
         <Route path="contracts/:id/edit" element={<ContractForm />} />
         <Route path="counterparties" element={<Counterparties />} />
+        <Route path="settings" element={<Settings />} />
         <Route path="trash" element={<Trash />} />
         <Route path="admin" element={<Admin />} />
       </Route>
