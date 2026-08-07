@@ -228,12 +228,18 @@ export const tr: Translation = {
     nameRequired: "Ad *",
     email: "E-posta",
     phone: "Telefon",
+    notes: "Notlar",
     add: "Ekle",
+    edit: "Düzenle",
+    details: "Detaylar",
+    save: "Kaydet",
+    editTitle: "Karşı tarafı düzenle",
     noCounterparties: "Henüz karşı taraf yok.",
     deleteConfirm:
       "Bu karşı taraf silinsin mi? Sözleşmeler tarafından referans verildiği sürece silinemez.",
     loadFailed: "Yükleme başarısız",
     saveFailed: "Kaydetme başarısız",
+    updateFailed: "Güncelleme başarısız",
     deleteFailed: "Silme başarısız",
   },
   trash: {

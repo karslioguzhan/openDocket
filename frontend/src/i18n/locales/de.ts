@@ -228,12 +228,18 @@ export const de: Translation = {
     nameRequired: "Name *",
     email: "E-Mail",
     phone: "Telefon",
+    notes: "Notizen",
     add: "Hinzufügen",
+    edit: "Bearbeiten",
+    details: "Details",
+    save: "Speichern",
+    editTitle: "Vertragspartner bearbeiten",
     noCounterparties: "Noch keine Vertragspartner.",
     deleteConfirm:
       "Diesen Vertragspartner löschen? Er kann nicht gelöscht werden, solange er von Verträgen referenziert wird.",
     loadFailed: "Laden fehlgeschlagen",
     saveFailed: "Speichern fehlgeschlagen",
+    updateFailed: "Aktualisieren fehlgeschlagen",
     deleteFailed: "Löschen fehlgeschlagen",
   },
   trash: {

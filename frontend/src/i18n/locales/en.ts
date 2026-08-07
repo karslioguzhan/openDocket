@@ -226,12 +226,18 @@ export const en = {
     nameRequired: "Name *",
     email: "Email",
     phone: "Phone",
+    notes: "Notes",
     add: "Add",
+    edit: "Edit",
+    details: "Details",
+    save: "Save",
+    editTitle: "Edit counterparty",
     noCounterparties: "No counterparties yet.",
     deleteConfirm:
       "Delete this counterparty? It cannot be deleted while referenced by contracts.",
     loadFailed: "Failed to load",
     saveFailed: "Save failed",
+    updateFailed: "Update failed",
     deleteFailed: "Delete failed",
   },
   trash: {
