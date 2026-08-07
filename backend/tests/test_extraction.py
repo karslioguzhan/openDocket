@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import io
 import json
 
 import httpx
+from PIL import Image
 
 from app.services import extraction
 
@@ -183,3 +185,270 @@ async def test_llm_failure_falls_back_to_heuristics(client, owner, login, monkey
     data = resp.json()
     assert data["counterparty_name"] == "Acme GmbH"
     assert data["notice_days"] == 60
+
+
+def _tiny_png() -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (8, 8), (255, 255, 255)).save(buf, format="PNG")
+    return buf.getvalue()
+
+
+async def test_llm_vision_sends_images(client, owner, login, monkeypatch):
+    await login(client, "owner@example.com")
+
+    calls = []
+
+    def fake_post(url: str, **kwargs):
+        calls.append((url, kwargs))
+        return _FakeLLMResponse()
+
+    monkeypatch.setattr(extraction, "get_settings", _FakeLLMSettings)
+    monkeypatch.setattr(extraction.httpx, "post", fake_post)
+
+    resp = await client.post(
+        "/api/contracts/extract",
+        files=[
+            ("files", ("scan.png", _tiny_png(), "image/png")),
+            ("files", ("note.txt", b"gibberish", "text/plain")),
+        ],
+        data={"llm_vision": "1"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["counterparty_name"] == "LLM Corp"
+
+    assert calls
+    content = calls[0][1]["json"]["messages"][1]["content"]
+    assert isinstance(content, list)
+    assert content[0]["type"] == "text"
+    assert any(
+        part["type"] == "image_url"
+        and part["image_url"]["url"].startswith("data:image/jpeg;base64,")
+        for part in content
+    )
+
+
+async def test_llm_vision_off_uses_text_only(client, owner, login, monkeypatch):
+    await login(client, "owner@example.com")
+
+    calls = []
+
+    def fake_post(url: str, **kwargs):
+        calls.append((url, kwargs))
+        return _FakeLLMResponse()
+
+    monkeypatch.setattr(extraction, "get_settings", _FakeLLMSettings)
+    monkeypatch.setattr(extraction.httpx, "post", fake_post)
+
+    resp = await client.post(
+        "/api/contracts/extract",
+        files=[
+            ("files", ("scan.png", _tiny_png(), "image/png")),
+            ("files", ("note.txt", b"gibberish", "text/plain")),
+        ],
+    )
+    assert resp.status_code == 200, resp.text
+    assert calls
+    assert isinstance(calls[0][1]["json"]["messages"][1]["content"], str)
+
+
+async def test_llm_vision_falls_back_to_text_on_provider_error(client, owner, login, monkeypatch):
+    await login(client, "owner@example.com")
+
+    calls = []
+
+    def fake_post(url: str, **kwargs):
+        content = kwargs["json"]["messages"][1]["content"]
+        if isinstance(content, list):
+            raise httpx.HTTPStatusError(
+                "Client error '400 Bad Request' for url 'https://llm.example.test/v1/chat/completions'",
+                request=httpx.Request("POST", "https://llm.example.test/v1/chat/completions"),
+                response=_FakeLLMResponse(),
+            )
+        calls.append((url, kwargs))
+        return _FakeLLMResponse()
+
+    monkeypatch.setattr(extraction, "get_settings", _FakeLLMSettings)
+    monkeypatch.setattr(extraction.httpx, "post", fake_post)
+
+    resp = await client.post(
+        "/api/contracts/extract",
+        files=[
+            ("files", ("scan.png", _tiny_png(), "image/png")),
+            ("files", ("note.txt", b"gibberish", "text/plain")),
+        ],
+        data={"llm_vision": "1"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["counterparty_name"] == "LLM Corp"
+    assert len(calls) == 1
+    assert isinstance(calls[0][1]["json"]["messages"][1]["content"], str)
+
+
+def test_detect_category_insurance():
+    text = "Private Haftpflichtversicherung - Versicherungsschein Nr. 42"
+    assert extraction._detect_category(text) == "privathaftpflicht"
+
+
+def test_detect_category_kfz_teilkasko():
+    text = "Kfz-Teilkasko Versicherung fuer meinen Wagen"
+    assert extraction._detect_category(text) == "kfz_teilkasko"
+
+
+def test_detect_category_rent():
+    text = "Mietvertrag zwischen Vermieter und Mieter fuer eine Wohnung"
+    assert extraction._detect_category(text) == "mietvertrag"
+
+
+def test_detect_category_generic_falls_back_to_none():
+    text = "Ein ganz normales Dokument ohne Hinweis auf die Art."
+    assert extraction._detect_category(text) is None
+
+
+def test_detect_title_skips_letterhead():
+    text = (
+        "HUK-COBURG Versicherungsverein\n"
+        "Gartenstr. 4\n"
+        "96444 Coburg\n"
+        "\n"
+        "Kfz-Haftpflichtversicherung\n"
+        "Versicherungsschein Nr. 7-123-456-789\n"
+    )
+    assert extraction._detect_title(text, "doc.txt") == "Kfz-Haftpflichtversicherung"
+
+
+def test_detect_title_letterhead_only():
+    text = "Techniker Krankenkasse\nHeilbronner Str. 2\n10779 Berlin\n"
+    assert extraction._detect_title(text, "doc.txt") == "Techniker Krankenkasse"
+
+
+def test_detect_amount_prefers_beitrag_over_versicherungssumme():
+    text = (
+        "Versicherungssumme: 500.000,00 EUR\n"
+        "Monatlicher Beitrag: 32,50 EUR\n"
+    )
+    amount, currency = extraction._detect_amount(text)
+    assert str(amount) == "32.50"
+    assert currency == "EUR"
+
+
+def test_detect_amount_prefers_monthly_over_annual():
+    text = (
+        "Jahresbeitrag: 390,00 EUR\n"
+        "Monatlicher Beitrag: 32,50 EUR\n"
+    )
+    amount, _ = extraction._detect_amount(text)
+    assert str(amount) == "32.50"
+
+
+def test_detect_amount_currency_first():
+    text = "Monatlicher Beitrag: EUR 49,99"
+    amount, currency = extraction._detect_amount(text)
+    assert str(amount) == "49.99"
+    assert currency == "EUR"
+
+
+def test_detect_amount_none():
+    assert extraction._detect_amount("Kein Geld im Text") == (None, None)
+
+
+def test_detect_counterparty_letterhead():
+    text = (
+        "Techniker Krankenkasse\n"
+        "Heilbronner Str. 2\n"
+        "10779 Berlin\n"
+        "\n"
+        "Sehr geehrte Frau Mustermann,\n"
+        "Ihre Versicherungsnummer lautet 7-123-456-789.\n"
+    )
+    assert extraction._detect_counterparty(text) == "Techniker Krankenkasse"
+
+
+def test_detect_counterparty_label_vertragspartner():
+    text = "Vertragspartner: Acme GmbH\nVersicherungsnummer: 7-123-456-789"
+    assert extraction._detect_counterparty(text) == "Acme GmbH"
+
+
+def test_detect_single_word_letterhead_and_currency_first():
+    text = (
+        "Allianz\n"
+        "One Allianz Drive\n"
+        "London\n"
+        "\n"
+        "Home insurance policy 99-ABC-42\n"
+        "Sum insured: 300000 USD\n"
+        "Monthly premium: 24.99 USD\n"
+    )
+    assert extraction._detect_counterparty(text) == "Allianz"
+    assert extraction._detect_title(text, "doc.txt") == "Home insurance policy 99-ABC-42"
+    amount, currency = extraction._detect_amount(text)
+    assert str(amount) == "24.99"
+    assert currency == "USD"
+
+
+def test_normalize_llm_category_accepts_key_and_label():
+    result = extraction._normalize_llm_result(
+        '{"category": "kfz_haftpflicht", "title": "x"}'
+    )
+    assert result["category"] == "kfz_haftpflicht"
+
+    result = extraction._normalize_llm_result(
+        '{"category": "Private Krankenversicherung", "title": "x"}'
+    )
+    assert result["category"] == "private_kv"
+
+
+def test_normalize_llm_category_ignores_invalid():
+    result = extraction._normalize_llm_result(
+        '{"category": "nonsense", "title": "x"}'
+    )
+    assert "category" not in result
+
+
+async def test_extract_api_includes_category(client, owner, login):
+    await login(client, "owner@example.com")
+    resp = await client.post(
+        "/api/contracts/extract",
+        files={
+            "files": (
+                "miete.txt",
+                "Mietvertrag zwischen Vermieter und Mieter, Monatsmiete 850,00 EUR, Kündigungsfrist 3 Monate".encode(),
+                "text/plain",
+            )
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["category"] == "mietvertrag"
+    assert data["value"] == "850.00"
+
+
+async def test_llm_category_overrides_heuristics(client, owner, login, monkeypatch):
+    await login(client, "owner@example.com")
+
+    class _Resp:
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self) -> dict:
+            return {
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps({"category": "hausrat", "title": "LLM Title"})
+                        }
+                    }
+                ]
+            }
+
+    def fake_post(url: str, **kwargs):
+        return _Resp()
+
+    monkeypatch.setattr(extraction, "get_settings", _FakeLLMSettings)
+    monkeypatch.setattr(extraction.httpx, "post", fake_post)
+
+    resp = await client.post(
+        "/api/contracts/extract",
+        files={"files": ("miete.txt", b"Mietvertrag, Monatsmiete 850,00 EUR", "text/plain")},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["category"] == "hausrat"

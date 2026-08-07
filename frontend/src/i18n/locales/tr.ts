@@ -186,6 +186,7 @@ export const tr: Translation = {
     extractNoResult: "Belgede okunabilir metin bulunamadı.",
     reviewNotice: "Alanlar belgenizden otomatik dolduruldu. Kaydetmeden önce lütfen gözden geçirip düzeltin.",
     detectedCounterparty: "Algılandı: {{name}}",
+    detectedCategory: "Algılandı: {{name}}",
     filesToAttach: "Dosyalar eklenecek",
     uploadFailed: "Dosyalar eklenemedi",
     aiEnabled: "Yapay zekâ çıkarımı: etkin ({{model}})",
@@ -202,6 +203,9 @@ export const tr: Translation = {
     baseUrl: "Temel URL",
     model: "Model",
     hint: "Belge tarama ile alanları otomatik doldurmak için kullanılır. Yalnızca bu tarayıcıda saklanır ve bir belge tararken sağlayıcıya gönderilir.",
+    visionLabel: "Belge görsellerini yapay zekâya gönder (görüntü)",
+    visionHint:
+      "Taranan sayfaları/PDF'leri görsel olarak da gönderir. Tüm modeller görselleri desteklemez — hata durumunda otomatik olarak yalnızca metne dönülür.",
     save: "Kaydet",
     test: "Bağlantıyı test et",
     testing: "Test ediliyor…",

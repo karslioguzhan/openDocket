@@ -17,7 +17,7 @@ export function Settings() {
     const saved = loadLLMConfig();
     if (saved) return saved;
     const preset = presetById("opencode");
-    return { provider: preset.id, baseUrl: preset.baseUrl, model: preset.model, apiKey: "" };
+    return { provider: preset.id, baseUrl: preset.baseUrl, model: preset.model, apiKey: "", vision: preset.vision ?? false };
   });
   const [showKey, setShowKey] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null);
@@ -63,7 +63,7 @@ export function Settings() {
   const remove = () => {
     clearLLMConfig();
     const p = presetById("opencode");
-    setConfig({ provider: p.id, baseUrl: p.baseUrl, model: p.model, apiKey: "" });
+    setConfig({ provider: p.id, baseUrl: p.baseUrl, model: p.model, apiKey: "", vision: p.vision ?? false });
     setStatus(null);
   };
 
@@ -117,6 +117,16 @@ export function Settings() {
           onChange={(e) => setConfig((c) => ({ ...c, model: e.target.value }))}
           placeholder="model-id"
         />
+
+        <label style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={config.vision ?? false}
+            onChange={(e) => setConfig((c) => ({ ...c, vision: e.target.checked }))}
+          />
+          {t("settings.visionLabel")}
+        </label>
+        <p className="muted">{t("settings.visionHint")}</p>
 
         <p className="muted" style={{ marginTop: 10 }}>
           {t("settings.hint")}

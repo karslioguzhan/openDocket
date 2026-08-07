@@ -19,6 +19,7 @@ async def extract_contract(
     llm_base_url: str | None = Form(default=None),
     llm_api_key: str | None = Form(default=None),
     llm_model: str | None = Form(default=None),
+    llm_vision: str | None = Form(default=None),
     user: User = Depends(current_active_user),
 ):
     """OCR / parse PDF or image uploads and return candidate contract fields."""
@@ -48,7 +49,8 @@ async def extract_contract(
         )
         if value and value.strip()
     }
-    parsed = parse_contract_documents(documents, llm_config=llm_config or None)
+    use_vision = (llm_vision or "").strip().lower() in {"1", "true", "yes", "on"}
+    parsed = parse_contract_documents(documents, llm_config=llm_config or None, use_vision=use_vision)
     if not parsed:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,

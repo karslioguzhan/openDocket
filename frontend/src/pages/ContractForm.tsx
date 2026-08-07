@@ -144,17 +144,20 @@ export function ContractForm() {
       if (cfg.baseUrl) body.append("llm_base_url", cfg.baseUrl);
       if (cfg.apiKey) body.append("llm_api_key", cfg.apiKey);
       if (cfg.model) body.append("llm_model", cfg.model);
+      if (cfg.vision) body.append("llm_vision", "1");
     }
     try {
       const res = await api<ExtractionResult>("/contracts/extract", { method: "POST", body });
       setExtraction(res);
       const matched = matchCounterparty(res.counterparty_name);
+      const validCategories = new Set(categories.map((c) => c.key));
       setForm({
         ...empty,
         title: res.title ?? "",
         counterparty_id: matched,
         counterparty_name: matched ? "" : res.counterparty_name ?? "",
         versicherungsnummer: res.versicherungsnummer ?? "",
+        category: res.category && validCategories.has(res.category) ? res.category : "",
         effective_date: res.effective_date ?? "",
         expiry_date: res.expiry_date ?? "",
         notice_days: res.notice_days?.toString() ?? "",
@@ -355,6 +358,11 @@ export function ContractForm() {
                   </optgroup>
                 ))}
               </select>
+              {extraction?.category && !form.category && (
+                <div className="muted" style={{ marginTop: 6 }}>
+                  {t("contractForm.detectedCategory", { name: categoryLabel(t, extraction.category) })}
+                </div>
+              )}
             </div>
             <div>
               <label>{t("contractForm.tagsLabel")}</label>

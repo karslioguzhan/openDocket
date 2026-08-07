@@ -98,6 +98,7 @@ export interface ExtractionResult {
   title: string | null;
   counterparty_name: string | null;
   versicherungsnummer: string | null;
+  category: string | null;
   effective_date: string | null;
   expiry_date: string | null;
   notice_days: number | null;
@@ -111,6 +112,7 @@ export interface LLMConfig {
   baseUrl: string;
   apiKey: string;
   model: string;
+  vision?: boolean;
 }
 
 export interface LLMTestResult {

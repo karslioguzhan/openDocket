@@ -6,6 +6,7 @@ export interface LLMPreset {
   baseUrl: string;
   model: string;
   needsKey: boolean;
+  vision?: boolean;
 }
 
 export const LLM_PRESETS: LLMPreset[] = [
@@ -15,6 +16,7 @@ export const LLM_PRESETS: LLMPreset[] = [
     baseUrl: "https://opencode.ai/zen/v1",
     model: "deepseek-v4-flash",
     needsKey: true,
+    vision: true,
   },
   {
     id: "opencode-go",
@@ -22,6 +24,7 @@ export const LLM_PRESETS: LLMPreset[] = [
     baseUrl: "https://opencode.ai/zen/go/v1",
     model: "deepseek-v4-flash",
     needsKey: true,
+    vision: true,
   },
   {
     id: "openai",
@@ -29,6 +32,7 @@ export const LLM_PRESETS: LLMPreset[] = [
     baseUrl: "https://api.openai.com/v1",
     model: "gpt-4o-mini",
     needsKey: true,
+    vision: true,
   },
   {
     id: "openrouter",
@@ -36,6 +40,7 @@ export const LLM_PRESETS: LLMPreset[] = [
     baseUrl: "https://openrouter.ai/api/v1",
     model: "openai/gpt-4o-mini",
     needsKey: true,
+    vision: true,
   },
   {
     id: "groq",
@@ -43,6 +48,7 @@ export const LLM_PRESETS: LLMPreset[] = [
     baseUrl: "https://api.groq.com/openai/v1",
     model: "llama-3.3-70b-versatile",
     needsKey: true,
+    vision: false,
   },
   {
     id: "deepseek",
@@ -50,6 +56,7 @@ export const LLM_PRESETS: LLMPreset[] = [
     baseUrl: "https://api.deepseek.com",
     model: "deepseek-chat",
     needsKey: true,
+    vision: false,
   },
   {
     id: "local",
@@ -57,6 +64,7 @@ export const LLM_PRESETS: LLMPreset[] = [
     baseUrl: "http://host.docker.internal:11434/v1",
     model: "llama3",
     needsKey: false,
+    vision: false,
   },
   {
     id: "custom",
@@ -64,6 +72,7 @@ export const LLM_PRESETS: LLMPreset[] = [
     baseUrl: "",
     model: "",
     needsKey: false,
+    vision: false,
   },
 ];
 
@@ -85,7 +94,7 @@ export function loadLLMConfig(): LLMConfig | null {
       typeof parsed.apiKey === "string" &&
       typeof parsed.model === "string"
     ) {
-      return parsed;
+      return { ...parsed, vision: parsed.vision === true };
     }
   } catch {
     /* ignore corrupt storage */

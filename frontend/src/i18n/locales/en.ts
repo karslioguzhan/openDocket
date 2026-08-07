@@ -184,6 +184,7 @@ export const en = {
     extractNoResult: "No readable text found in the document.",
     reviewNotice: "Fields were auto-filled from your document. Please review and correct them before saving.",
     detectedCounterparty: "Detected: {{name}}",
+    detectedCategory: "Detected: {{name}}",
     filesToAttach: "Files will be attached",
     uploadFailed: "Could not attach files",
     aiEnabled: "AI extraction: enabled ({{model}})",
@@ -200,6 +201,9 @@ export const en = {
     baseUrl: "Base URL",
     model: "Model",
     hint: "Used by scan-to-contract to auto-fill fields. Stored only in this browser and sent to the provider when you scan a document.",
+    visionLabel: "Send document images to the AI (vision)",
+    visionHint:
+      "Also sends scanned pages/PDFs as images. Not all models support images — it automatically falls back to text-only on errors.",
     save: "Save",
     test: "Test connection",
     testing: "Testing…",

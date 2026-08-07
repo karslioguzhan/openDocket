@@ -139,6 +139,7 @@ class ExtractionOut(BaseModel):
     title: str | None = None
     counterparty_name: str | None = None
     versicherungsnummer: str | None = None
+    category: ContractCategory | None = None
     effective_date: date | None = None
     expiry_date: date | None = None
     notice_days: int | None = None

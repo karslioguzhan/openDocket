@@ -186,6 +186,7 @@ export const de: Translation = {
     extractNoResult: "Kein lesbarer Text im Dokument gefunden.",
     reviewNotice: "Die Felder wurden automatisch aus Ihrem Dokument ausgefüllt. Bitte prüfen und korrigieren Sie sie vor dem Speichern.",
     detectedCounterparty: "Erkannt: {{name}}",
+    detectedCategory: "Erkannt: {{name}}",
     filesToAttach: "Dateien werden angehängt",
     uploadFailed: "Dateien konnten nicht angehängt werden",
     aiEnabled: "KI-Extraktion: aktiviert ({{model}})",
@@ -202,6 +203,9 @@ export const de: Translation = {
     baseUrl: "Basis-URL",
     model: "Modell",
     hint: "Wird von „Dokument scannen“ verwendet, um Felder automatisch auszufüllen. Wird nur in diesem Browser gespeichert und beim Scannen an den Anbieter gesendet.",
+    visionLabel: "Dokumentbilder an die KI senden (Vision)",
+    visionHint:
+      "Sendet gescannte Seiten/PDFs auch als Bild mit. Nicht alle Modelle unterstützen Bilder – im Fehlerfall wird automatisch nur der Text verwendet.",
     save: "Speichern",
     test: "Verbindung testen",
     testing: "Teste…",
