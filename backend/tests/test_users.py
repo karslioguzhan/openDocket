@@ -34,6 +34,35 @@ async def test_admin_creates_lists_updates_deletes_user(client, admin, login):
     assert deleted.status_code == 204
 
 
+async def test_admin_deleting_user_with_data_succeeds(client, admin, login):
+    await login(client, "admin@example.com")
+
+    created = await client.post(
+        "/api/users", json={"email": "dataguy@example.com", "password": "password123"}
+    )
+    assert created.status_code == 201
+    uid = created.json()["id"]
+
+    await login(client, "dataguy@example.com")
+    cp = await client.post("/api/counterparties", json={"name": "Acme GmbH"})
+    assert cp.status_code == 201
+    contract = await client.post(
+        "/api/contracts", json={"title": "Telecom", "counterparty_id": cp.json()["id"]}
+    )
+    assert contract.status_code == 201
+    await client.post("/api/auth/logout")
+
+    await login(client, "admin@example.com")
+    resp = await client.delete(f"/api/users/{uid}")
+    assert resp.status_code == 204, resp.text
+
+    gone = await client.post(
+        "/api/auth/login",
+        data={"username": "dataguy@example.com", "password": "password123"},
+    )
+    assert gone.status_code == 400
+
+
 async def test_non_admin_cannot_manage_users(client, make_user, login):
     await make_user("regular@example.com")
     await login(client, "regular@example.com")
