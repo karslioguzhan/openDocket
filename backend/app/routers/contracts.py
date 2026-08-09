@@ -17,6 +17,7 @@ from app.dependencies import (
     get_owned_contract,
 )
 from app.models import (
+    CATEGORY_GROUPS,
     Contract,
     ContractCategory,
     ContractStatus,
@@ -100,6 +101,7 @@ async def _resolve_counterparty(
 async def list_contracts(
     status_filter: ContractStatus | None = Query(default=None, alias="status"),
     category: ContractCategory | None = None,
+    group: str | None = None,
     counterparty_id: uuid.UUID | None = None,
     tag: str | None = None,
     search: str | None = None,
@@ -119,6 +121,12 @@ async def list_contracts(
         stmt = stmt.where(Contract.status == status_filter)
     if category is not None:
         stmt = stmt.where(Contract.category == category)
+    if group is not None:
+        group_categories = [cat for cat, g in CATEGORY_GROUPS.items() if g == group]
+        if group_categories:
+            stmt = stmt.where(Contract.category.in_(group_categories))
+        else:
+            stmt = stmt.where(Contract.category.is_(None))
     if counterparty_id is not None:
         stmt = stmt.where(Contract.counterparty_id == counterparty_id)
     if tag:

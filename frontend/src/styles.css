@@ -253,6 +253,29 @@ tr:hover td {
   color: var(--accent-dark);
 }
 
+.cp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cp-type {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.cp-company {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.cp-person {
+  background: var(--ok-soft);
+  color: var(--ok-text);
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;

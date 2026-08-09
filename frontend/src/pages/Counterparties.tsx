@@ -5,6 +5,7 @@ import type { Counterparty } from "../types";
 
 interface EditDraft {
   name: string;
+  type: string;
   email: string;
   phone: string;
 }
@@ -17,6 +18,7 @@ export function Counterparties() {
   const { t } = useTranslation();
   const [rows, setRows] = useState<Counterparty[]>([]);
   const [name, setName] = useState("");
+  const [type, setType] = useState("company");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -24,9 +26,9 @@ export function Counterparties() {
   const [busy, setBusy] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<EditDraft>({ name: "", email: "", phone: "" });
+  const [editDraft, setEditDraft] = useState<EditDraft>({ name: "", type: "company", email: "", phone: "" });
   const [modal, setModal] = useState<Counterparty | null>(null);
-  const [modalDraft, setModalDraft] = useState<ModalDraft>({ name: "", email: "", phone: "", notes: "" });
+  const [modalDraft, setModalDraft] = useState<ModalDraft>({ name: "", type: "company", email: "", phone: "", notes: "" });
 
   const load = useCallback(async () => {
     try {
@@ -50,12 +52,14 @@ export function Counterparties() {
         method: "POST",
         body: JSON.stringify({
           name,
+          type,
           email: email || null,
           phone: phone || null,
           notes: notes || null,
         }),
       });
       setName("");
+      setType("company");
       setEmail("");
       setPhone("");
       setNotes("");
@@ -69,7 +73,7 @@ export function Counterparties() {
 
   const startEdit = (c: Counterparty) => {
     setEditingId(c.id);
-    setEditDraft({ name: c.name, email: c.email ?? "", phone: c.phone ?? "" });
+    setEditDraft({ name: c.name, type: c.type, email: c.email ?? "", phone: c.phone ?? "" });
   };
 
   const cancelEdit = () => {
@@ -84,6 +88,7 @@ export function Counterparties() {
         method: "PATCH",
         body: JSON.stringify({
           name: editDraft.name,
+          type: editDraft.type,
           email: editDraft.email || null,
           phone: editDraft.phone || null,
         }),
@@ -101,6 +106,7 @@ export function Counterparties() {
     setModal(c);
     setModalDraft({
       name: c.name,
+      type: c.type,
       email: c.email ?? "",
       phone: c.phone ?? "",
       notes: c.notes ?? "",
@@ -117,6 +123,7 @@ export function Counterparties() {
         method: "PATCH",
         body: JSON.stringify({
           name: modalDraft.name,
+          type: modalDraft.type,
           email: modalDraft.email || null,
           phone: modalDraft.phone || null,
           notes: modalDraft.notes || null,
@@ -154,6 +161,10 @@ export function Counterparties() {
 
       <form className="card" onSubmit={add} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <input placeholder={t("counterparties.nameRequired")} value={name} onChange={(e) => setName(e.target.value)} required />
+        <select value={type} onChange={(e) => setType(e.target.value)} style={{ width: 170 }}>
+          <option value="company">{t("counterpartyType.company")}</option>
+          <option value="person">{t("counterpartyType.person")}</option>
+        </select>
         <input placeholder={t("counterparties.email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input placeholder={t("counterparties.phone")} value={phone} onChange={(e) => setPhone(e.target.value)} />
         <input placeholder={t("counterparties.notes")} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -188,6 +199,14 @@ export function Counterparties() {
                             onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
                             autoFocus
                           />
+                          <select
+                            value={editDraft.type}
+                            onChange={(e) => setEditDraft((d) => ({ ...d, type: e.target.value }))}
+                            style={{ width: 170, marginTop: 6 }}
+                          >
+                            <option value="company">{t("counterpartyType.company")}</option>
+                            <option value="person">{t("counterpartyType.person")}</option>
+                          </select>
                         </td>
                         <td>
                           <input
@@ -215,7 +234,10 @@ export function Counterparties() {
                       </>
                     ) : (
                       <>
-                        <td>{c.name}</td>
+                        <td>
+                          {c.name}{" "}
+                          <span className={`badge cp-type cp-${c.type}`}>{t(`counterpartyType.${c.type}`)}</span>
+                        </td>
                         <td>{c.email ?? "—"}</td>
                         <td>{c.phone ?? "—"}</td>
                         <td>
@@ -250,6 +272,14 @@ export function Counterparties() {
               value={modalDraft.name}
               onChange={(e) => setModalDraft((d) => ({ ...d, name: e.target.value }))}
             />
+            <label>{t("counterparties.type")}</label>
+            <select
+              value={modalDraft.type}
+              onChange={(e) => setModalDraft((d) => ({ ...d, type: e.target.value }))}
+            >
+              <option value="company">{t("counterpartyType.company")}</option>
+              <option value="person">{t("counterpartyType.person")}</option>
+            </select>
             <label>{t("common.email")}</label>
             <input
               type="email"

@@ -79,6 +79,10 @@ export const de: Translation = {
     viewer: "Betrachter",
     owner: "Eigentümer",
   },
+  counterpartyType: {
+    company: "Unternehmen",
+    person: "Person",
+  },
   common: {
     title: "Titel",
     status: "Status",
@@ -127,6 +131,7 @@ export const de: Translation = {
     newContract: "+ Neuer Vertrag",
     searchPlaceholder: "Titel, Notizen, Vertragspartner, Tags suchen…",
     allStatuses: "Alle Status",
+    allGroup: "Alle {{group}}",
     noContracts: "Keine Verträge gefunden.",
     loadFailed: "Laden fehlgeschlagen",
   },
@@ -249,6 +254,7 @@ export const de: Translation = {
   counterparties: {
     title: "Vertragspartner",
     nameRequired: "Name *",
+    type: "Typ",
     email: "E-Mail",
     phone: "Telefon",
     notes: "Notizen",

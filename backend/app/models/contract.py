@@ -33,6 +33,11 @@ class ContractStatus(str, enum.Enum):
     terminated = "terminated"
 
 
+class CounterpartyType(str, enum.Enum):
+    company = "company"
+    person = "person"
+
+
 class ContractCategory(str, enum.Enum):
     kfz_haftpflicht = "kfz_haftpflicht"
     kfz_teilkasko = "kfz_teilkasko"
@@ -181,6 +186,11 @@ class Counterparty(TimestampMixin, Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    type: Mapped[CounterpartyType] = mapped_column(
+        Enum(CounterpartyType, name="counterparty_type", native_enum=False, length=20),
+        nullable=False,
+        default=CounterpartyType.company,
+    )
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(40), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)

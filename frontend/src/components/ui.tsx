@@ -62,3 +62,13 @@ export function valueLabel(value: string | null, currency: string | null): strin
   if (value === null) return "";
   return `${currency ?? ""} ${value}`.trim();
 }
+
+export function CounterpartyChip({ name, type }: { name: string; type: string | null }) {
+  const { t } = useTranslation();
+  return (
+    <span className="cp-chip">
+      <span className="cp-name">{name}</span>
+      {type && <span className={`cp-type cp-${type}`}>{t(`counterpartyType.${type}`)}</span>}
+    </span>
+  );
+}

@@ -10,6 +10,7 @@ export interface User {
 export interface Counterparty {
   id: string;
   name: string;
+  type: string;
   email: string | null;
   phone: string | null;
   notes: string | null;

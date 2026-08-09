@@ -23,6 +23,7 @@ export function ContractList() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"" | ContractStatus>("");
   const [category, setCategory] = useState("");
+  const [group, setGroup] = useState("");
   const [debounced, setDebounced] = useState("");
   const [archiveOpen, setArchiveOpen] = useState(false);
 
@@ -45,19 +46,20 @@ export function ContractList() {
       const params = new URLSearchParams();
       if (debounced) params.set("search", debounced);
       if (status) params.set("status", status);
-      if (category) params.set("category", category);
+      if (group) params.set("group", group);
+      else if (category) params.set("category", category);
       const rows = await api<Contract[]>(`/contracts?${params.toString()}`);
       setContracts(rows);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("contracts.loadFailed"));
     }
-  }, [debounced, status, category]);
+  }, [debounced, status, group, category]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const filtering = Boolean(debounced || status || category);
+  const filtering = Boolean(debounced || status || group || category);
 
   const expiringIds = new Set(
     contracts
@@ -101,10 +103,26 @@ export function ContractList() {
             </option>
           ))}
         </select>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: 220 }}>
+        <select
+          value={group ? `group:${group}` : category}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val.startsWith("group:")) {
+              setGroup(val.slice(6));
+              setCategory("");
+            } else {
+              setCategory(val);
+              setGroup("");
+            }
+          }}
+          style={{ width: 260 }}
+        >
           <option value="">{t("contractForm.category")}</option>
-          {Object.entries(categoryGroups).map(([group, cats]) => (
-            <optgroup key={group} label={groupLabel(t, group)}>
+          {Object.entries(categoryGroups).map(([groupKey, cats]) => (
+            <optgroup key={groupKey} label={groupLabel(t, groupKey)}>
+              <option value={`group:${groupKey}`} style={{ fontWeight: 700 }}>
+                {t("contracts.allGroup", { group: groupLabel(t, groupKey) })}
+              </option>
               {cats.map((c) => (
                 <option key={c.key} value={c.key}>
                   {categoryLabel(t, c.key)}

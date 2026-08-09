@@ -79,6 +79,10 @@ export const tr: Translation = {
     viewer: "izleyici",
     owner: "sahip",
   },
+  counterpartyType: {
+    company: "Şirket",
+    person: "Kişi",
+  },
   common: {
     title: "Başlık",
     status: "Durum",
@@ -127,6 +131,7 @@ export const tr: Translation = {
     newContract: "+ Yeni sözleşme",
     searchPlaceholder: "Başlık, notlar, karşı taraf, etiketler ara…",
     allStatuses: "Tüm durumlar",
+    allGroup: "Tüm {{group}}",
     noContracts: "Sözleşme bulunamadı.",
     loadFailed: "Yükleme başarısız",
   },
@@ -249,6 +254,7 @@ export const tr: Translation = {
   counterparties: {
     title: "Karşı Taraflar",
     nameRequired: "Ad *",
+    type: "Tür",
     email: "E-posta",
     phone: "Telefon",
     notes: "Notlar",

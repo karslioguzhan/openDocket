@@ -184,6 +184,23 @@ async def test_counterparty_name_reuses_existing(client, owner, login):
     assert len(cps.json()) == 1
 
 
+async def test_counterparty_type_roundtrip(client, make_user, login):
+    await make_user("cptype@example.com")
+    await login(client, "cptype@example.com")
+
+    created = await client.post(
+        "/api/counterparties", json={"name": "Max Mustermann", "type": "person"}
+    )
+    assert created.status_code == 201
+    assert created.json()["type"] == "person"
+
+    updated = await client.patch(
+        f"/api/counterparties/{created.json()['id']}", json={"type": "company"}
+    )
+    assert updated.status_code == 200
+    assert updated.json()["type"] == "company"
+
+
 async def test_counterparty_id_rejects_other_owners(client, owner, viewer, login):
     await login(client, "owner@example.com")
     other_cp = await client.post("/api/counterparties", json={"name": "Mine"})

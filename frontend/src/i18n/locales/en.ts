@@ -77,6 +77,10 @@ export const en = {
     viewer: "viewer",
     owner: "owner",
   },
+  counterpartyType: {
+    company: "Company",
+    person: "Person",
+  },
   common: {
     title: "Title",
     status: "Status",
@@ -125,6 +129,7 @@ export const en = {
     newContract: "+ New contract",
     searchPlaceholder: "Search title, notes, counterparty, tags…",
     allStatuses: "All statuses",
+    allGroup: "All {{group}}",
     noContracts: "No contracts found.",
     loadFailed: "Failed to load",
   },
@@ -247,6 +252,7 @@ export const en = {
   counterparties: {
     title: "Counterparties",
     nameRequired: "Name *",
+    type: "Type",
     email: "Email",
     phone: "Phone",
     notes: "Notes",

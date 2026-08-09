@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from fastapi_users import schemas as fu_schemas
 
-from app.models import ContractCategory, ContractStatus
+from app.models import ContractCategory, ContractStatus, CounterpartyType
 
 
 class UserCreate(fu_schemas.BaseUserCreate):
@@ -54,6 +54,7 @@ class ChangePassword(BaseModel):
 
 class CounterpartyIn(BaseModel):
     name: str = Field(min_length=1, max_length=200)
+    type: CounterpartyType = CounterpartyType.company
     email: EmailStr | None = None
     phone: str | None = Field(default=None, max_length=40)
     notes: str | None = None
@@ -61,6 +62,7 @@ class CounterpartyIn(BaseModel):
 
 class CounterpartyUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
+    type: CounterpartyType | None = None
     email: EmailStr | None = None
     phone: str | None = Field(default=None, max_length=40)
     notes: str | None = None
@@ -71,6 +73,7 @@ class CounterpartyOut(BaseModel):
 
     id: uuid.UUID
     name: str
+    type: CounterpartyType
     email: str | None = None
     phone: str | None = None
     notes: str | None = None

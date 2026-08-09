@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from app.services.demo import DEMO_EMAIL
+import app.db as db_module
+from app.models import User
+from app.services.demo import DEMO_EMAIL, DEMO_SEED_VERSION, ensure_demo
 
 
 async def test_demo_login_creates_and_logs_in(client, login):
@@ -68,3 +70,70 @@ async def test_demo_user_isolated_from_other_users(client, make_user, login):
     await client.post("/api/auth/demo-login")
     demo_contracts = await client.get("/api/contracts")
     assert len(demo_contracts.json()) >= 15
+
+
+async def test_demo_contracts_cover_all_groups(client):
+    await client.post("/api/auth/demo-login")
+    all_rows = (await client.get("/api/contracts")).json()
+    assert len(all_rows) >= 35
+
+    kfz = (await client.get("/api/contracts?group=kfz")).json()
+    assert kfz
+    kfz_categories = {c["category"] for c in kfz}
+    assert kfz_categories <= {
+        "kfz_haftpflicht",
+        "kfz_teilkasko",
+        "kfz_vollkasko",
+        "kfz_schutzbrief",
+        "motorrad",
+        "fahrrad",
+    }
+
+    vorsorge = (await client.get("/api/contracts?group=vorsorge")).json()
+    assert vorsorge
+    assert all(
+        c["category"]
+        in {"risikoleben", "rentenversicherung", "altersvorsorge", "berufsunfaehigkeit"}
+        for c in vorsorge
+    )
+
+
+async def test_demo_counterparty_types(client):
+    await client.post("/api/auth/demo-login")
+    cps = (await client.get("/api/counterparties")).json()
+    by_name = {c["name"]: c["type"] for c in cps}
+
+    assert by_name["HUK-Coburg"] == "company"
+    assert by_name["DEVK Versicherungen"] == "company"
+    assert by_name["Max Mustermann"] == "person"
+    assert by_name["Anna Schmidt"] == "person"
+    assert by_name["Lisa Fischer"] == "person"
+
+    contracts = (await client.get("/api/contracts")).json()
+    person_linked = next(
+        c for c in contracts if c["counterparty"] and c["counterparty"]["name"] == "Max Mustermann"
+    )
+    assert person_linked["counterparty"]["type"] == "person"
+
+
+async def test_demo_reseeds_when_seed_version_outdated(client):
+    from sqlalchemy import select
+
+    await client.post("/api/auth/demo-login")
+    first_count = len((await client.get("/api/contracts")).json())
+
+    async with db_module.AsyncSessionLocal() as session:
+        user = await session.scalar(select(User).where(User.email == DEMO_EMAIL))
+        assert user is not None
+        user.demo_seed_version = 0
+        await session.commit()
+
+    await ensure_demo()
+
+    async with db_module.AsyncSessionLocal() as session:
+        user = await session.scalar(select(User).where(User.email == DEMO_EMAIL))
+        assert user.demo_seed_version == DEMO_SEED_VERSION
+
+    await client.post("/api/auth/demo-login")
+    after = (await client.get("/api/contracts")).json()
+    assert len(after) == first_count  # replaced, not duplicated
