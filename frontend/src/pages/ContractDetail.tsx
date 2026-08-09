@@ -42,6 +42,20 @@ export function ContractDetail() {
     navigate(`/contracts/${copy.id}`);
   };
 
+  const reactivate = async () => {
+    try {
+      await api<Contract>(`/contracts/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "active" }),
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("archive.reactivateFailed"));
+    }
+  };
+
+  const archived = contract.status === "expired" || contract.status === "terminated";
+
   const addShare = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!shareEmail) return;
@@ -108,46 +122,76 @@ export function ContractDetail() {
 
       {!isOwner && <div className="card">{t("contractDetail.viewerAccess")}</div>}
 
+      {archived && (
+        <div className="archived-banner">
+          <span className="badge">{t("archive.archived")}</span>
+          <span>{t("archive.detailHint")}</span>
+          {isOwner && (
+            <button className="secondary" style={{ marginLeft: "auto" }} onClick={reactivate}>
+              {t("archive.reactivate")}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="card">
         <div className="grid">
           <div className="stat">
             <div className="lbl">{t("common.status")}</div>
             <StatusBadge status={contract.status} />
           </div>
-          <div className="stat">
-            <div className="lbl">{t("common.counterparty")}</div>
-            <div>{contract.counterparty?.name ?? "—"}</div>
-          </div>
-          <div className="stat">
-            <div className="lbl">{t("contractDetail.versicherungsnummer")}</div>
-            <div>{contract.versicherungsnummer ?? "—"}</div>
-          </div>
-          <div className="stat">
-            <div className="lbl">{t("common.category")}</div>
-            <div>{contract.category ? categoryLabel(t, contract.category) : "—"}</div>
-          </div>
-          <div className="stat">
-            <div className="lbl">{t("contractDetail.effectiveDate")}</div>
-            <div>{contract.effective_date ? new Date(contract.effective_date + "T00:00:00").toLocaleDateString(i18n.language) : "—"}</div>
-          </div>
-          <div className="stat">
-            <div className="lbl">{t("contractDetail.expiryRenewal")}</div>
-            <ExpiryLabel expiry={contract.expiry_date} />
-          </div>
-          <div className="stat">
-            <div className="lbl">{t("common.value")}</div>
-            <div>{valueLabel(contract.value, contract.currency) || "—"}</div>
-          </div>
-          <div className="stat">
-            <div className="lbl">{t("contractDetail.noticePeriod")}</div>
-            <div>{contract.notice_days === null ? "—" : t("noticeDays", { count: contract.notice_days })}</div>
-          </div>
-          <div className="stat">
-            <div className="lbl">{t("contractDetail.tags")}</div>
-            <div className="tags">
-              {contract.tags.length ? contract.tags.map((tg) => <span key={tg} className="tag">{tg}</span>) : "—"}
+          {contract.counterparty && (
+            <div className="stat">
+              <div className="lbl">{t("common.counterparty")}</div>
+              <div>{contract.counterparty.name}</div>
             </div>
-          </div>
+          )}
+          {contract.versicherungsnummer && (
+            <div className="stat">
+              <div className="lbl">{t("contractDetail.versicherungsnummer")}</div>
+              <div>{contract.versicherungsnummer}</div>
+            </div>
+          )}
+          {contract.category && (
+            <div className="stat">
+              <div className="lbl">{t("common.category")}</div>
+              <div>{categoryLabel(t, contract.category)}</div>
+            </div>
+          )}
+          {contract.effective_date && (
+            <div className="stat">
+              <div className="lbl">{t("contractDetail.effectiveDate")}</div>
+              <div>{new Date(contract.effective_date + "T00:00:00").toLocaleDateString(i18n.language)}</div>
+            </div>
+          )}
+          {contract.expiry_date && (
+            <div className="stat">
+              <div className="lbl">{t("contractDetail.expiryRenewal")}</div>
+              <ExpiryLabel expiry={contract.expiry_date} />
+            </div>
+          )}
+          {contract.value !== null && contract.value !== "" && (
+            <div className="stat">
+              <div className="lbl">{t("common.value")}</div>
+              <div>{valueLabel(contract.value, contract.currency)}</div>
+            </div>
+          )}
+          {contract.notice_days !== null && (
+            <div className="stat">
+              <div className="lbl">{t("contractDetail.noticePeriod")}</div>
+              <div>{t("noticeDays", { count: contract.notice_days })}</div>
+            </div>
+          )}
+          {contract.tags.length > 0 && (
+            <div className="stat">
+              <div className="lbl">{t("contractDetail.tags")}</div>
+              <div className="tags">
+                {contract.tags.map((tg) => (
+                  <span key={tg} className="tag">{tg}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         {contract.notes && (
           <div style={{ marginTop: 16 }}>

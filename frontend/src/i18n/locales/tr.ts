@@ -18,6 +18,7 @@ export const tr: Translation = {
     draft: "Taslak",
     active: "Aktif",
     expired: "Süresi dolmuş",
+    archived: "Arşivlendi",
     terminated: "Sona ermiş",
   },
   categoryGroups: {
@@ -119,6 +120,19 @@ export const tr: Translation = {
     allStatuses: "Tüm durumlar",
     noContracts: "Sözleşme bulunamadı.",
     loadFailed: "Yükleme başarısız",
+  },
+  board: {
+    expiring: "Yakında sona erecek",
+    active: "Aktif",
+    draft: "Taslaklar",
+  },
+  archive: {
+    title: "Arşiv",
+    hint: "Sona ermiş veya süresi dolmuş sözleşmeler — referans için saklanır.",
+    archived: "Arşivlendi",
+    detailHint: "Bu sözleşme arşivde.",
+    reactivate: "Yeniden etkinleştir",
+    reactivateFailed: "Yeniden etkinleştirme başarısız",
   },
   contractDetail: {
     edit: "Düzenle",

@@ -18,6 +18,7 @@ export const de: Translation = {
     draft: "Entwurf",
     active: "Aktiv",
     expired: "Abgelaufen",
+    archived: "Archiviert",
     terminated: "Beendet",
   },
   categoryGroups: {
@@ -119,6 +120,19 @@ export const de: Translation = {
     allStatuses: "Alle Status",
     noContracts: "Keine Verträge gefunden.",
     loadFailed: "Laden fehlgeschlagen",
+  },
+  board: {
+    expiring: "Läuft bald ab",
+    active: "Aktiv",
+    draft: "Entwürfe",
+  },
+  archive: {
+    title: "Archiv",
+    hint: "Beendete oder abgelaufene Verträge – zur Referenz aufbewahrt.",
+    archived: "Archiviert",
+    detailHint: "Dieser Vertrag befindet sich im Archiv.",
+    reactivate: "Reaktivieren",
+    reactivateFailed: "Reaktivierung fehlgeschlagen",
   },
   contractDetail: {
     edit: "Bearbeiten",

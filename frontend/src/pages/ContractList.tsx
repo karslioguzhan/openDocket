@@ -2,10 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
-import { categoryLabel, ExpiryLabel, groupLabel, RoleBadge, valueLabel } from "../components/ui";
+import { ContractCard } from "../components/ContractCard";
+import { categoryLabel, DaysLeft, groupLabel } from "../components/ui";
 import type { CategoryMeta, Contract, ContractStatus } from "../types";
 
 const STATUSES: Array<ContractStatus | ""> = ["", "draft", "active", "expired", "terminated"];
+
+interface Section {
+  key: string;
+  title: string;
+  dotClass: string;
+  contracts: Contract[];
+}
 
 export function ContractList() {
   const { t } = useTranslation();
@@ -16,6 +24,7 @@ export function ContractList() {
   const [status, setStatus] = useState<"" | ContractStatus>("");
   const [category, setCategory] = useState("");
   const [debounced, setDebounced] = useState("");
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   useEffect(() => {
     void api<CategoryMeta[]>("/meta/categories").then(setCategories);
@@ -47,6 +56,27 @@ export function ContractList() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const filtering = Boolean(debounced || status || category);
+
+  const expiringIds = new Set(
+    contracts
+      .filter((c) => c.status === "active" && c.expiry_date && (DaysLeft(c.expiry_date) ?? 91) <= 90)
+      .map((c) => c.id),
+  );
+
+  const expiring = contracts.filter((c) => expiringIds.has(c.id));
+  const active = contracts.filter((c) => c.status === "active" && !expiringIds.has(c.id));
+  const draft = contracts.filter((c) => c.status === "draft");
+  const archive = contracts.filter((c) => c.status === "expired" || c.status === "terminated");
+
+  const sections: Section[] = [
+    { key: "expiring", title: t("board.expiring"), dotClass: "dot-expiring", contracts: expiring },
+    { key: "active", title: t("board.active"), dotClass: "dot-active", contracts: active },
+    { key: "draft", title: t("board.draft"), dotClass: "dot-draft", contracts: draft },
+  ].filter((s) => s.contracts.length > 0);
+
+  const showArchive = filtering || archiveOpen;
 
   return (
     <>
@@ -90,50 +120,45 @@ export function ContractList() {
       {contracts.length === 0 ? (
         <div className="card empty">{t("contracts.noContracts")}</div>
       ) : (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <table>
-            <thead>
-              <tr>
-                <th>{t("common.title")}</th>
-                <th>{t("contractDetail.versicherungsnummer")}</th>
-                <th>{t("common.status")}</th>
-                <th>{t("common.counterparty")}</th>
-                <th>{t("common.category")}</th>
-                <th>{t("common.expiry")}</th>
-                <th>{t("common.value")}</th>
-                <th>{t("common.tags")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contracts.map((c) => (
-                <tr key={c.id}>
-                  <td>
-                    <Link to={`/contracts/${c.id}`}>{c.title}</Link> <RoleBadge role={c.role} />
-                  </td>
-                  <td>{c.versicherungsnummer ?? "—"}</td>
-                  <td>
-                    <span className={`badge ${c.status}`}>{t(`status.${c.status}`)}</span>
-                  </td>
-                  <td>{c.counterparty?.name ?? "—"}</td>
-                  <td>{c.category ? categoryLabel(t, c.category) : "—"}</td>
-                  <td>
-                    <ExpiryLabel expiry={c.expiry_date} />
-                  </td>
-                  <td>{valueLabel(c.value, c.currency) || "—"}</td>
-                  <td>
-                    <div className="tags">
-                      {c.tags.map((tg) => (
-                        <span key={tg} className="tag">
-                          {tg}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {sections.map((s) => (
+            <div key={s.key} className="board-section">
+              <div className="board-section-head">
+                <span className={`dot ${s.dotClass}`} />
+                <h2>{s.title}</h2>
+                <span className="board-count">{s.contracts.length}</span>
+              </div>
+              <div className="board-grid">
+                {s.contracts.map((c) => (
+                  <ContractCard key={c.id} contract={c} />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {archive.length > 0 && (
+            <div className="board-section archive">
+              <button
+                type="button"
+                className="board-section-head archive-toggle"
+                onClick={() => setArchiveOpen((o) => !o)}
+              >
+                <span className="dot dot-archive" />
+                <h2>{t("archive.title")}</h2>
+                <span className="board-count">{archive.length}</span>
+                <span className="archive-chevron">{showArchive ? "▾" : "▸"}</span>
+              </button>
+              {!showArchive && <p className="muted archive-hint">{t("archive.hint")}</p>}
+              {showArchive && (
+                <div className="board-grid">
+                  {archive.map((c) => (
+                    <ContractCard key={c.id} contract={c} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </>
   );

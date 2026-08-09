@@ -16,6 +16,7 @@ export const en = {
     draft: "Draft",
     active: "Active",
     expired: "Expired",
+    archived: "Archived",
     terminated: "Terminated",
   },
   categoryGroups: {
@@ -117,6 +118,19 @@ export const en = {
     allStatuses: "All statuses",
     noContracts: "No contracts found.",
     loadFailed: "Failed to load",
+  },
+  board: {
+    expiring: "Expiring soon",
+    active: "Active",
+    draft: "Draft",
+  },
+  archive: {
+    title: "Archive",
+    hint: "Terminated or expired contracts — kept for reference.",
+    archived: "Archived",
+    detailHint: "This contract is in the archive.",
+    reactivate: "Reactivate",
+    reactivateFailed: "Reactivate failed",
   },
   contractDetail: {
     edit: "Edit",

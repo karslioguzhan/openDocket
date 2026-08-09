@@ -47,6 +47,12 @@ export function Dashboard() {
           <div className="num">{data.status_counts["expired"] ?? 0}</div>
           <div className="lbl">{t("dashboard.expired")}</div>
         </div>
+        <div className="stat">
+          <div className="num">
+            {(data.status_counts["expired"] ?? 0) + (data.status_counts["terminated"] ?? 0)}
+          </div>
+          <div className="lbl">{t("dashboard.archived")}</div>
+        </div>
       </div>
 
       <div className="card">
