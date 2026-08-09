@@ -51,3 +51,13 @@ export async function login(email: string, password: string): Promise<void> {
 export async function logout(): Promise<void> {
   await api<void>("/auth/logout", { method: "POST" });
 }
+
+export async function demoLogin(): Promise<void> {
+  const resp = await fetch("/api/auth/demo-login", {
+    method: "POST",
+    credentials: "include",
+  });
+  if (resp.status === 204) return;
+  const disabled = resp.status === 404;
+  throw new ApiError(resp.status, i18n.t(disabled ? "login.demoDisabled" : "login.demoFailed"));
+}

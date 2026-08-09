@@ -103,6 +103,11 @@ export const de: Translation = {
     signingIn: "Anmelden…",
     signIn: "Anmelden",
     failed: "Anmeldung fehlgeschlagen",
+    demo: "Demo ausprobieren",
+    demoOr: "oder",
+    demoHint: "Sofortiges Demo-Konto mit Beispielverträgen.",
+    demoFailed: "Demo-Anmeldung fehlgeschlagen",
+    demoDisabled: "Die Demo-Anmeldung ist auf diesem Server deaktiviert.",
   },
   dashboard: {
     title: "Dashboard",

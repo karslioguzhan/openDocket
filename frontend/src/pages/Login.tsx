@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { login } from "../api";
+import { demoLogin, login } from "../api";
 import { useAuth } from "../auth";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 
@@ -24,6 +24,20 @@ export function Login() {
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("login.failed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const demo = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      await demoLogin();
+      await refresh();
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("login.demoFailed"));
     } finally {
       setBusy(false);
     }
@@ -57,6 +71,13 @@ export function Login() {
           <button type="submit" disabled={busy}>
             {busy ? t("login.signingIn") : t("login.signIn")}
           </button>
+        </div>
+        <div className="login-demo">
+          <div className="login-demo-divider">{t("login.demoOr")}</div>
+          <button type="button" className="btn secondary" onClick={demo} disabled={busy}>
+            {t("login.demo")}
+          </button>
+          <p className="muted login-demo-hint">{t("login.demoHint")}</p>
         </div>
       </form>
     </div>

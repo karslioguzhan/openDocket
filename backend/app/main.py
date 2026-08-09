@@ -26,6 +26,7 @@ from app.routers import (
 )
 from app.schemas import UserCreate
 from app.services.admin import ensure_admin, purge_trash
+from app.services.demo import ensure_demo
 
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
@@ -37,6 +38,7 @@ async def lifespan(app: FastAPI):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
     await ensure_admin()
+    await ensure_demo()
     purge_task = asyncio.create_task(purge_trash())
     yield
     purge_task.cancel()

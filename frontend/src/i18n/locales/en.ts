@@ -101,6 +101,11 @@ export const en = {
     signingIn: "Signing in…",
     signIn: "Sign in",
     failed: "Login failed",
+    demo: "Explore the demo",
+    demoOr: "or",
+    demoHint: "Instant demo account with sample contracts.",
+    demoFailed: "Demo login failed",
+    demoDisabled: "Demo login is disabled on this server.",
   },
   dashboard: {
     title: "Dashboard",

@@ -467,6 +467,38 @@ label {
   margin-bottom: 20px;
 }
 
+.login-demo {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.login-demo .btn {
+  width: 100%;
+}
+
+.login-demo-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.login-demo-divider::before,
+.login-demo-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
+.login-demo-hint {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;

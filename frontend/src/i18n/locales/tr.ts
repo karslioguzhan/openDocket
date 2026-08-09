@@ -103,6 +103,11 @@ export const tr: Translation = {
     signingIn: "Oturum açılıyor…",
     signIn: "Oturum aç",
     failed: "Oturum açılamadı",
+    demo: "Demoyu keşfet",
+    demoOr: "veya",
+    demoHint: "Örnek sözleşmelerle anında demo hesabı.",
+    demoFailed: "Demo girişi başarısız",
+    demoDisabled: "Bu sunucuda demo girişi devre dışı.",
   },
   dashboard: {
     title: "Panel",
