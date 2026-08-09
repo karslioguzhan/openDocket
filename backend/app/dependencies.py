@@ -16,6 +16,7 @@ CONTRACT_LOAD_OPTIONS = (
     selectinload(Contract.shares).selectinload(Share.user),
     selectinload(Contract.tags),
     selectinload(Contract.counterparty),
+    selectinload(Contract.versicherungsnehmer),
 )
 
 

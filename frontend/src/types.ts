@@ -53,6 +53,7 @@ export interface Contract {
   owner_id: string;
   versicherungsnummer: string | null;
   counterparty: Counterparty | null;
+  versicherungsnehmer: Counterparty | null;
   category: string | null;
   tags: string[];
   effective_date: string | null;
@@ -79,6 +80,8 @@ export interface ContractPayload {
   status: ContractStatus;
   counterparty_id?: string | null;
   counterparty_name?: string | null;
+  versicherungsnehmer_id?: string | null;
+  versicherungsnehmer_name?: string | null;
   versicherungsnummer?: string | null;
   category?: string | null;
   tags?: string[];
@@ -99,6 +102,7 @@ export interface ExtractedFile {
 export interface ExtractionResult {
   title: string | null;
   counterparty_name: string | null;
+  versicherungsnehmer: string | null;
   versicherungsnummer: string | null;
   category: string | null;
   effective_date: string | null;

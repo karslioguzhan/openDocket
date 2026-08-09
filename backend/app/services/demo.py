@@ -27,7 +27,7 @@ from app.storage import storage_dir
 DEMO_EMAIL = "demo@opendocket.example"
 DEMO_PASSWORD = "demo-password-123"
 DEMO_DISPLAY_NAME = "Demo User"
-DEMO_SEED_VERSION = 2
+DEMO_SEED_VERSION = 3
 
 
 def _days(offset: int | None) -> date | None:
@@ -656,7 +656,19 @@ _CONTRACTS: list[tuple] = [
     ),
 ]
 
-_PERSONS = {"Max Mustermann", "Anna Schmidt", "Lisa Fischer"}
+_PERSONS = {
+    "Max Mustermann",
+    "Anna Schmidt",
+    "Lisa Fischer",
+    "Demo User",
+    "Elena Beispiel",
+}
+
+# Contracts whose policyholder (Versicherungsnehmer) is not the account holder.
+_POLICYHOLDERS: dict[str, str] = {
+    "Kinderunfallversicherung": "Elena Beispiel",
+    "Zahnzusatzversicherung": "Elena Beispiel",
+}
 
 _DEMO_FILE = (
     "Haftpflichtversicherung.txt",
@@ -716,6 +728,7 @@ async def _seed_data(session: AsyncSession, user: User) -> None:
             status=status,
             category=category,
             counterparty_id=cp.id if cp else None,
+            versicherungsnehmer_id=(await get_cp(_POLICYHOLDERS.get(title, "Demo User"))).id,
             effective_date=_days(eff),
             expiry_date=_days(exp),
             notice_days=notice,

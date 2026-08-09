@@ -443,6 +443,7 @@ def _parse_heuristically(text: str, filename: str) -> dict[str, Any]:
     result: dict[str, Any] = {
         "title": _detect_title(text, filename),
         "counterparty_name": _detect_counterparty(text),
+        "versicherungsnehmer": _detect_versicherungsnehmer(text),
         "versicherungsnummer": _detect_policy_number(text),
         "category": _detect_category(text),
         "effective_date": None,
@@ -761,6 +762,27 @@ def _detect_policy_number(text: str) -> str | None:
     return None
 
 
+def _detect_versicherungsnehmer(text: str) -> str | None:
+    """Find the insured person (Versicherungsnehmer) after the matching label."""
+    for line in text.splitlines():
+        m = _SECTION_LABELS_RE.match(line)
+        if not m:
+            continue
+        if m.group(1).lower() not in {"versicherungsnehmer", "insured"}:
+            continue
+        name = m.group(2).strip().strip(":.,;")
+        if not name or len(name) > 120:
+            continue
+        if _SKIP_LINE_RE.search(name) or _DATE_TOKEN_RE.search(name):
+            continue
+        if not re.search(r"[A-Za-zÄÖÜäöü]", name):
+            continue
+        if _COUNTERPARTY_BAD_START.match(name):
+            continue
+        return name[:120]
+    return None
+
+
 def call_chat_completion(
     base_url: str,
     api_key: str | None,
@@ -853,6 +875,8 @@ def _parse_with_llm(
         "You extract structured data from contract documents. "
         "Return ONLY a valid JSON object with these keys: "
         "title (string or null), counterparty_name (string or null), "
+        "versicherungsnehmer (string or null, the insured person / policyholder, "
+        "also known as Versicherungsnehmer), "
         "versicherungsnummer (string or null, the insurance/policy/contract number, "
         "also known as Versicherungsnummer, Versicherungsnr., Policennummer or Vertragsnummer), "
         "category (string or null, one of these exact keys: "
@@ -865,6 +889,9 @@ def _parse_with_llm(
         "provider, landlord or seller the customer has the contract with), usually "
         "found in the letterhead or after labels like 'Versicherer', 'Vertragspartner' "
         "or 'Customer'. Do NOT return the insured person's or customer's own name. "
+        "versicherungsnehmer is the insured person / policyholder the contract belongs "
+        "to, usually found after labels like 'Versicherungsnehmer' or 'Insured' - "
+        "it is the person's own name, NOT the insurer, and NOT the contract type. "
         "value is the recurring amount the customer pays (monthly/annual premium or "
         "fee, Beitrag/Prämie); prefer it over a sum insured or one-off total. "
         "If several recurring amounts exist, prefer the monthly one; if only an "
@@ -905,6 +932,8 @@ def _normalize_llm_result(content: str) -> dict[str, Any]:
         result["title"] = data["title"].strip()[:200]
     if isinstance(data.get("counterparty_name"), str) and data["counterparty_name"].strip():
         result["counterparty_name"] = data["counterparty_name"].strip()[:200]
+    if isinstance(data.get("versicherungsnehmer"), str) and data["versicherungsnehmer"].strip():
+        result["versicherungsnehmer"] = data["versicherungsnehmer"].strip()[:200]
     if isinstance(data.get("versicherungsnummer"), str) and data["versicherungsnummer"].strip():
         result["versicherungsnummer"] = data["versicherungsnummer"].strip()[:40]
 

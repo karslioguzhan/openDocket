@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import type { Contract, ContractFile } from "../types";
-import { ExpiryLabel, StatusBadge, categoryLabel, formatBytes, valueLabel } from "../components/ui";
+import { ExpiryLabel, StatusBadge, categoryLabel, formatBytes, valueLabel, CounterpartyChip } from "../components/ui";
 
 export function ContractDetail() {
   const { id } = useParams() as { id: string };
@@ -144,6 +144,12 @@ export function ContractDetail() {
             <div className="stat">
               <div className="lbl">{t("common.counterparty")}</div>
               <div>{contract.counterparty.name}</div>
+            </div>
+          )}
+          {contract.versicherungsnehmer && (
+            <div className="stat">
+              <div className="lbl">{t("contractDetail.versicherungsnehmer")}</div>
+              <CounterpartyChip name={contract.versicherungsnehmer.name} type={contract.versicherungsnehmer.type} />
             </div>
           )}
           {contract.versicherungsnummer && (

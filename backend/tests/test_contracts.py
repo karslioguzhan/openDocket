@@ -201,6 +201,57 @@ async def test_counterparty_type_roundtrip(client, make_user, login):
     assert updated.json()["type"] == "company"
 
 
+async def test_versicherungsnehmer_by_name(client, owner, login):
+    await login(client, "owner@example.com")
+    contract = await make_contract(
+        client,
+        title="Haftpflicht",
+        counterparty_name="HUK-Coburg",
+        versicherungsnehmer_name="Max Mustermann",
+    )
+    assert contract["versicherungsnehmer"]["name"] == "Max Mustermann"
+    assert contract["versicherungsnehmer"]["type"] == "person"
+    assert contract["counterparty"]["name"] == "HUK-Coburg"
+
+    again = await make_contract(
+        client, title="Teilkasko", versicherungsnehmer_name="Max Mustermann"
+    )
+    assert again["versicherungsnehmer"]["id"] == contract["versicherungsnehmer"]["id"]
+
+    cps = (await client.get("/api/counterparties")).json()
+    assert len([c for c in cps if c["name"] == "Max Mustermann"]) == 1
+
+
+async def test_versicherungsnehmer_by_id_and_update(client, owner, login):
+    await login(client, "owner@example.com")
+    person = await client.post("/api/counterparties", json={"name": "Anna", "type": "person"})
+    pid = person.json()["id"]
+
+    contract = await make_contract(client, title="BU", versicherungsnehmer_id=pid)
+    assert contract["versicherungsnehmer"]["id"] == pid
+
+    company = await client.post("/api/counterparties", json={"name": "Acme GmbH"})
+    bad = await client.post(
+        "/api/contracts",
+        json={"title": "Bad", "status": "active", "versicherungsnehmer_id": company.json()["id"]},
+    )
+    assert bad.status_code == 400
+
+    cleared = await client.patch(
+        f"/api/contracts/{contract['id']}", json={"versicherungsnehmer_name": None}
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["versicherungsnehmer"] is None
+
+
+async def test_versicherungsnehmer_extraction_heuristic():
+    from app.services.extraction import _detect_versicherungsnehmer
+
+    text = "Versicherungsnehmer: Max Mustermann\nVersicherer: HUK-Coburg AG\nBeitrag: 610,00 EUR"
+    assert _detect_versicherungsnehmer(text) == "Max Mustermann"
+    assert _detect_versicherungsnehmer("Versicherer: HUK-Coburg AG\nBeitrag: 610 EUR") is None
+
+
 async def test_counterparty_id_rejects_other_owners(client, owner, viewer, login):
     await login(client, "owner@example.com")
     other_cp = await client.post("/api/counterparties", json={"name": "Mine"})

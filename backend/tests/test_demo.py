@@ -137,3 +137,17 @@ async def test_demo_reseeds_when_seed_version_outdated(client):
     await client.post("/api/auth/demo-login")
     after = (await client.get("/api/contracts")).json()
     assert len(after) == first_count  # replaced, not duplicated
+
+
+async def test_demo_versicherungsnehmer(client):
+    await client.post("/api/auth/demo-login")
+    rows = (await client.get("/api/contracts")).json()
+    assert len(rows) >= 35
+    assert all(c["versicherungsnehmer"] for c in rows)
+
+    kfz = next(c for c in rows if c["title"] == "KFZ-Haftpflichtversicherung")
+    assert kfz["versicherungsnehmer"]["name"] == "Demo User"
+    assert kfz["versicherungsnehmer"]["type"] == "person"
+
+    child = next(c for c in rows if c["title"] == "Kinderunfallversicherung")
+    assert child["versicherungsnehmer"]["name"] == "Elena Beispiel"

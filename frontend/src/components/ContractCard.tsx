@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Contract } from "../types";
-import { categoryLabel, ExpiryLabel, RoleBadge, valueLabel } from "./ui";
+import { categoryLabel, CounterpartyChip, ExpiryLabel, RoleBadge, valueLabel } from "./ui";
 
 export function ContractCard({ contract }: { contract: Contract }) {
   const { t } = useTranslation();
@@ -15,10 +15,32 @@ export function ContractCard({ contract }: { contract: Contract }) {
       </div>
       <div className="contract-card-meta">
         <span className={`badge ${contract.status}`}>{t(`status.${contract.status}`)}</span>
-        {contract.counterparty && <span className="card-chip">{contract.counterparty.name}</span>}
         {contract.versicherungsnummer && <span className="card-chip muted">{contract.versicherungsnummer}</span>}
       </div>
       <div className="contract-card-fields">
+        {contract.versicherungsnehmer && (
+          <div className="card-row">
+            <span className="card-label">{t("contractDetail.parties")}</span>
+            <span className="party-relation">
+              <CounterpartyChip
+                name={contract.versicherungsnehmer.name}
+                type={contract.versicherungsnehmer.type}
+              />
+              <span className="relation-arrow">↔</span>
+              {contract.counterparty ? (
+                <CounterpartyChip name={contract.counterparty.name} type={contract.counterparty.type} />
+              ) : (
+                <span className="muted">—</span>
+              )}
+            </span>
+          </div>
+        )}
+        {!contract.versicherungsnehmer && contract.counterparty && (
+          <div className="card-row">
+            <span className="card-label">{t("common.counterparty")}</span>
+            <CounterpartyChip name={contract.counterparty.name} type={contract.counterparty.type} />
+          </div>
+        )}
         {contract.expiry_date && (
           <div className="card-row">
             <span className="card-label">{t("common.expiry")}</span>

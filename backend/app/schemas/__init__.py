@@ -101,6 +101,8 @@ class ContractCreate(BaseModel):
     status: ContractStatus = ContractStatus.draft
     counterparty_id: uuid.UUID | None = None
     counterparty_name: str | None = Field(default=None, min_length=1, max_length=200)
+    versicherungsnehmer_id: uuid.UUID | None = None
+    versicherungsnehmer_name: str | None = Field(default=None, min_length=1, max_length=200)
     versicherungsnummer: str | None = Field(default=None, min_length=1, max_length=40)
     category: ContractCategory | None = None
     tags: list[str] = Field(default_factory=list)
@@ -117,6 +119,8 @@ class ContractUpdate(BaseModel):
     status: ContractStatus | None = None
     counterparty_id: uuid.UUID | None = None
     counterparty_name: str | None = Field(default=None, min_length=1, max_length=200)
+    versicherungsnehmer_id: uuid.UUID | None = None
+    versicherungsnehmer_name: str | None = Field(default=None, min_length=1, max_length=200)
     versicherungsnummer: str | None = Field(default=None, min_length=1, max_length=40)
     category: ContractCategory | None = None
     tags: list[str] | None = None
@@ -147,6 +151,7 @@ class ExtractedFileOut(BaseModel):
 class ExtractionOut(BaseModel):
     title: str | None = None
     counterparty_name: str | None = None
+    versicherungsnehmer: str | None = None
     versicherungsnummer: str | None = None
     category: ContractCategory | None = None
     effective_date: date | None = None
@@ -177,6 +182,7 @@ class ContractOut(BaseModel):
     owner_id: uuid.UUID
     versicherungsnummer: str | None = None
     counterparty: CounterpartyOut | None = None
+    versicherungsnehmer: CounterpartyOut | None = None
     category: ContractCategory | None = None
     tags: list[str] = []
     effective_date: date | None = None

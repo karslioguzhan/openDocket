@@ -22,6 +22,7 @@ from app.models import (
     ContractCategory,
     ContractStatus,
     Counterparty,
+    CounterpartyType,
     Share,
     Tag,
     User,
@@ -92,6 +93,49 @@ async def _resolve_counterparty(
         return existing.id
 
     cp = Counterparty(owner_id=user.id, name=name)
+    session.add(cp)
+    await session.flush()
+    return cp.id
+
+
+async def _resolve_policyholder(
+    session: AsyncSession,
+    user: User,
+    policyholder_id: uuid.UUID | None,
+    policyholder_name: str | None,
+) -> uuid.UUID | None:
+    """Return a person counterparty id for the Versicherungsnehmer, creating it if needed."""
+    if policyholder_id is not None:
+        cp = await session.get(Counterparty, policyholder_id)
+        if cp is None or cp.owner_id != user.id or cp.type != CounterpartyType.person:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unknown Versicherungsnehmer.")
+        return policyholder_id
+
+    name = (policyholder_name or "").strip()
+    if not name:
+        return None
+
+    existing = await session.scalar(
+        select(Counterparty).where(
+            Counterparty.owner_id == user.id,
+            Counterparty.type == CounterpartyType.person,
+            func.lower(Counterparty.name) == name.lower(),
+        )
+    )
+    if existing is None:
+        existing = await session.scalar(
+            select(Counterparty)
+            .where(
+                Counterparty.owner_id == user.id,
+                Counterparty.type == CounterpartyType.person,
+                Counterparty.name.ilike(f"%{name}%"),
+            )
+            .order_by(func.length(Counterparty.name).asc())
+        )
+    if existing is not None:
+        return existing.id
+
+    cp = Counterparty(owner_id=user.id, name=name, type=CounterpartyType.person)
     session.add(cp)
     await session.flush()
     return cp.id
@@ -178,11 +222,15 @@ async def create_contract(
     counterparty_id = await _resolve_counterparty(
         session, user, payload.counterparty_id, payload.counterparty_name
     )
+    versicherungsnehmer_id = await _resolve_policyholder(
+        session, user, payload.versicherungsnehmer_id, payload.versicherungsnehmer_name
+    )
     contract = Contract(
         owner_id=user.id,
         title=payload.title,
         status=payload.status,
         counterparty_id=counterparty_id,
+        versicherungsnehmer_id=versicherungsnehmer_id,
         category=payload.category,
         effective_date=payload.effective_date,
         expiry_date=payload.expiry_date,
@@ -197,7 +245,7 @@ async def create_contract(
         contract.tags = await _resolve_tags(session, user, payload.tags)
     session.add(contract)
     await session.commit()
-    await session.refresh(contract, attribute_names=["files", "shares", "tags", "counterparty"])
+    await session.refresh(contract, attribute_names=["files", "shares", "tags", "counterparty", "versicherungsnehmer"])
     contract._role = "owner"
     return contract_to_out(contract)
 
@@ -225,6 +273,14 @@ async def update_contract(
             data.get("counterparty_name"),
         )
     data.pop("counterparty_name", None)
+    if "versicherungsnehmer_id" in data or "versicherungsnehmer_name" in data:
+        data["versicherungsnehmer_id"] = await _resolve_policyholder(
+            session,
+            user,
+            data.get("versicherungsnehmer_id"),
+            data.get("versicherungsnehmer_name"),
+        )
+    data.pop("versicherungsnehmer_name", None)
     if "versicherungsnummer" in data and not data["versicherungsnummer"]:
         data["versicherungsnummer"] = generate_versicherungsnummer()
     if "tags" in data:
@@ -232,7 +288,7 @@ async def update_contract(
     for field, value in data.items():
         setattr(contract, field, value)
     await session.commit()
-    await session.refresh(contract, attribute_names=["files", "shares", "tags", "counterparty"])
+    await session.refresh(contract, attribute_names=["files", "shares", "tags", "counterparty", "versicherungsnehmer"])
     contract._role = "owner"
     return contract_to_out(contract)
 
@@ -280,7 +336,7 @@ async def duplicate_contract(
     copy.tags = list(contract.tags)
     session.add(copy)
     await session.commit()
-    await session.refresh(copy, attribute_names=["files", "shares", "tags", "counterparty"])
+    await session.refresh(copy, attribute_names=["files", "shares", "tags", "counterparty", "versicherungsnehmer"])
     copy._role = "owner"
     return contract_to_out(copy)
 

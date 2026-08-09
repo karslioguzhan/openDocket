@@ -35,6 +35,11 @@ def contract_to_out(contract: Contract, include_shares: bool = True) -> Contract
             if contract.counterparty is not None
             else None
         ),
+        versicherungsnehmer=(
+            CounterpartyOut.model_validate(contract.versicherungsnehmer)
+            if contract.versicherungsnehmer is not None
+            else None
+        ),
         category=contract.category,
         tags=[t.name for t in contract.tags],
         effective_date=contract.effective_date,

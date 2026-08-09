@@ -276,6 +276,25 @@ tr:hover td {
   color: var(--ok-text);
 }
 
+.party-relation {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.relation-arrow {
+  color: var(--muted);
+}
+
+.vn-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;

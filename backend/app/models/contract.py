@@ -153,6 +153,12 @@ class Contract(TimestampMixin, Base):
     counterparty_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("counterparties.id", ondelete="set null"), nullable=True
     )
+    versicherungsnehmer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("counterparties.id", ondelete="set null"),
+        nullable=True,
+        index=True,
+    )
     category: Mapped[ContractCategory | None] = mapped_column(
         Enum(ContractCategory, name="contract_category", native_enum=False, length=40),
         nullable=True,
@@ -171,7 +177,12 @@ class Contract(TimestampMixin, Base):
     )
 
     owner: Mapped["User"] = relationship("User", back_populates="contracts")
-    counterparty: Mapped["Counterparty | None"] = relationship("Counterparty", back_populates="contracts")
+    counterparty: Mapped["Counterparty | None"] = relationship(
+        "Counterparty", foreign_keys=[counterparty_id], back_populates="contracts"
+    )
+    versicherungsnehmer: Mapped["Counterparty | None"] = relationship(
+        "Counterparty", foreign_keys=[versicherungsnehmer_id]
+    )
     tags: Mapped[list["Tag"]] = relationship("Tag", secondary=contract_tags, back_populates="contracts")
     files: Mapped[list["ContractFile"]] = relationship(
         "ContractFile", back_populates="contract", cascade="all, delete-orphan"
@@ -199,7 +210,9 @@ class Counterparty(TimestampMixin, Base):
     )
 
     owner: Mapped["User"] = relationship("User", back_populates="counterparties")
-    contracts: Mapped[list["Contract"]] = relationship("Contract", back_populates="counterparty")
+    contracts: Mapped[list["Contract"]] = relationship(
+        "Contract", foreign_keys="Contract.counterparty_id", back_populates="counterparty"
+    )
 
 
 class Tag(TimestampMixin, Base):

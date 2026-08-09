@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
+import { useAuth } from "../auth";
 import { categoryLabel, formatBytes, groupLabel } from "../components/ui";
 import { isLLMConfigured, loadLLMConfig } from "../llmConfig";
 import type {
@@ -25,6 +26,8 @@ interface FormState {
   status: ContractStatus;
   counterparty_id: string;
   counterparty_name: string;
+  versicherungsnehmer_id: string;
+  versicherungsnehmer_name: string;
   versicherungsnummer: string;
   category: string;
   tags: string;
@@ -41,6 +44,8 @@ const empty: FormState = {
   status: "draft",
   counterparty_id: "",
   counterparty_name: "",
+  versicherungsnehmer_id: "",
+  versicherungsnehmer_name: "",
   versicherungsnummer: "",
   category: "",
   tags: "",
@@ -58,10 +63,16 @@ export function ContractForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const editing = Boolean(id);
 
+  const userName = user?.display_name ?? user?.email ?? "";
+
   const [mode, setMode] = useState<Mode>(editing ? "manual" : "choose");
-  const [form, setForm] = useState<FormState>(empty);
+  const [form, setForm] = useState<FormState>(() => ({
+    ...empty,
+    versicherungsnehmer_name: userName,
+  }));
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [categories, setCategories] = useState<CategoryMeta[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +95,8 @@ export function ContractForm() {
     return acc;
   }, {});
 
+  const persons = counterparties.filter((c) => c.type === "person");
+
   useEffect(() => {
     if (!id) return;
     api<Contract>(`/contracts/${id}`)
@@ -93,6 +106,8 @@ export function ContractForm() {
           status: c.status,
           counterparty_id: c.counterparty?.id ?? "",
           counterparty_name: "",
+          versicherungsnehmer_id: c.versicherungsnehmer?.id ?? "",
+          versicherungsnehmer_name: "",
           versicherungsnummer: c.versicherungsnummer ?? "",
           category: c.category ?? "",
           tags: c.tags.join(", "),
@@ -114,7 +129,7 @@ export function ContractForm() {
     setMode("choose");
     setScanFiles([]);
     setExtraction(null);
-    setForm(empty);
+    setForm({ ...empty, versicherungsnehmer_name: userName });
     setError(null);
   };
 
@@ -123,6 +138,15 @@ export function ContractForm() {
     const n = name.trim().toLowerCase();
     const found = counterparties.find(
       (c) => c.name.toLowerCase().includes(n) || n.includes(c.name.toLowerCase()),
+    );
+    return found?.id ?? "";
+  };
+
+  const matchPerson = (name: string | null): string => {
+    if (!name) return "";
+    const n = name.trim().toLowerCase();
+    const found = persons.find(
+      (p) => p.name.toLowerCase().includes(n) || n.includes(p.name.toLowerCase()),
     );
     return found?.id ?? "";
   };
@@ -150,12 +174,15 @@ export function ContractForm() {
       const res = await api<ExtractionResult>("/contracts/extract", { method: "POST", body });
       setExtraction(res);
       const matched = matchCounterparty(res.counterparty_name);
+      const matchedPerson = matchPerson(res.versicherungsnehmer);
       const validCategories = new Set(categories.map((c) => c.key));
       setForm({
         ...empty,
         title: res.title ?? "",
         counterparty_id: matched,
         counterparty_name: matched ? "" : res.counterparty_name ?? "",
+        versicherungsnehmer_id: matchedPerson,
+        versicherungsnehmer_name: matchedPerson ? "" : res.versicherungsnehmer ?? userName,
         versicherungsnummer: res.versicherungsnummer ?? "",
         category: res.category && validCategories.has(res.category) ? res.category : "",
         effective_date: res.effective_date ?? "",
@@ -181,6 +208,10 @@ export function ContractForm() {
       status: form.status,
       counterparty_id: form.counterparty_id || null,
       counterparty_name: form.counterparty_id ? null : form.counterparty_name || null,
+      versicherungsnehmer_id: form.versicherungsnehmer_id || null,
+      versicherungsnehmer_name: form.versicherungsnehmer_id
+        ? null
+        : form.versicherungsnehmer_name || null,
       versicherungsnummer: form.versicherungsnummer || null,
       category: form.category || null,
       tags: form.tags
@@ -339,6 +370,53 @@ export function ContractForm() {
                   {form.counterparty_name && (
                     <div className="muted" style={{ marginTop: 6 }}>
                       {t("contractForm.willCreateCounterparty", { name: form.counterparty_name })}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div>
+              <label>{t("contractForm.versicherungsnehmer")}</label>
+              <select
+                value={form.versicherungsnehmer_id}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    versicherungsnehmer_id: val,
+                    versicherungsnehmer_name: val ? "" : f.versicherungsnehmer_name,
+                  }));
+                }}
+              >
+                <option value="">{t("contractForm.none")}</option>
+                {persons.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              {extraction?.versicherungsnehmer && !form.versicherungsnehmer_id && (
+                <div className="muted" style={{ marginTop: 6 }}>
+                  {t("contractForm.detectedVersicherungsnehmer", { name: extraction.versicherungsnehmer })}
+                </div>
+              )}
+              {!form.versicherungsnehmer_id && (
+                <>
+                  <label style={{ marginTop: 12 }}>{t("contractForm.newVersicherungsnehmer")}</label>
+                  <input
+                    value={form.versicherungsnehmer_name}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        versicherungsnehmer_name: e.target.value,
+                        versicherungsnehmer_id: "",
+                      }))
+                    }
+                    placeholder={t("contractForm.newVersicherungsnehmerPlaceholder")}
+                  />
+                  {form.versicherungsnehmer_name && (
+                    <div className="muted" style={{ marginTop: 6 }}>
+                      {t("contractForm.willCreateVersicherungsnehmer", { name: form.versicherungsnehmer_name })}
                     </div>
                   )}
                 </>
