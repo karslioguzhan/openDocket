@@ -11,6 +11,7 @@ class User(SQLAlchemyBaseUserTableUUID, TimestampMixin, Base):
     __tablename__ = "users"
 
     display_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    theme: Mapped[str] = mapped_column(String(10), nullable=False, default="light")
 
     contracts: Mapped[list["Contract"]] = relationship(
         "Contract",

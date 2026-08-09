@@ -12,6 +12,10 @@ export const en = {
     adminSuffix: "admin",
     signOut: "Sign out",
   },
+  theme: {
+    light: "Switch to light mode",
+    dark: "Switch to dark mode",
+  },
   status: {
     draft: "Draft",
     active: "Active",

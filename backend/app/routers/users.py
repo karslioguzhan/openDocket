@@ -12,7 +12,14 @@ from app.auth import current_active_user, get_user_manager
 from app.db import get_session
 from app.dependencies import current_superuser
 from app.models import User
-from app.schemas import ChangePassword, UserAdminUpdate, UserCreate, UserRead, UserUpdate
+from app.schemas import (
+    ChangePassword,
+    ThemeUpdate,
+    UserAdminUpdate,
+    UserCreate,
+    UserRead,
+    UserUpdate,
+)
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -36,6 +43,18 @@ async def update_me(
         )
     update = UserUpdate(**payload.model_dump(exclude_unset=True))
     user = await user_manager.update(update, user, safe=True, request=request)
+    return UserRead.model_validate(user)
+
+
+@router.patch("/me/theme", response_model=UserRead)
+async def update_theme(
+    payload: ThemeUpdate,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_session),
+):
+    user.theme = payload.theme
+    await session.commit()
+    await session.refresh(user)
     return UserRead.model_validate(user)
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from fastapi_users import schemas as fu_schemas
@@ -26,6 +27,11 @@ class UserRead(BaseModel):
     display_name: str | None = None
     is_active: bool
     is_superuser: bool
+    theme: str = "light"
+
+
+class ThemeUpdate(BaseModel):
+    theme: Literal["light", "dark"]
 
 
 class UserAdminUpdate(BaseModel):

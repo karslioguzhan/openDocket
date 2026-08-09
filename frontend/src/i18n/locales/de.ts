@@ -14,6 +14,10 @@ export const de: Translation = {
     adminSuffix: "admin",
     signOut: "Abmelden",
   },
+  theme: {
+    light: "Zum hellen Modus wechseln",
+    dark: "Zum dunklen Modus wechseln",
+  },
   status: {
     draft: "Entwurf",
     active: "Aktiv",

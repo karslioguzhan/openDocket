@@ -83,7 +83,7 @@ export function Admin() {
         <h1>{t("admin.title")}</h1>
       </div>
       {error && <div className="error">{error}</div>}
-      {notice && <div className="card" style={{ background: "#e2f5ea", borderColor: "#b5e0c3" }}>{notice}</div>}
+      {notice && <div className="card notice success">{notice}</div>}
 
       <form className="card" onSubmit={createUser} style={{ display: "flex", gap: 10 }}>
         <input type="email" placeholder={t("admin.emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} required />

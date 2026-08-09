@@ -98,6 +98,25 @@ async def test_change_own_password(client, make_user, login):
     assert resp.status_code == 204
 
 
+async def test_user_theme_roundtrip(client, make_user, login):
+    await make_user("theme@example.com")
+    await login(client, "theme@example.com")
+
+    me = await client.get("/api/users/me")
+    assert me.status_code == 200
+    assert me.json()["theme"] == "light"
+
+    dark = await client.patch("/api/users/me/theme", json={"theme": "dark"})
+    assert dark.status_code == 200
+    assert dark.json()["theme"] == "dark"
+
+    me = await client.get("/api/users/me")
+    assert me.json()["theme"] == "dark"
+
+    invalid = await client.patch("/api/users/me/theme", json={"theme": "sepia"})
+    assert invalid.status_code == 422
+
+
 async def test_admin_resets_other_password(client, admin, make_user, login):
     target = await make_user("target@example.com")
     await login(client, "admin@example.com")

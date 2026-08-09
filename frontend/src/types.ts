@@ -4,6 +4,7 @@ export interface User {
   display_name: string | null;
   is_active: boolean;
   is_superuser: boolean;
+  theme: string;
 }
 
 export interface Counterparty {

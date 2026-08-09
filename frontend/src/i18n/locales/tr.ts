@@ -14,6 +14,10 @@ export const tr: Translation = {
     adminSuffix: "yönetici",
     signOut: "Çıkış yap",
   },
+  theme: {
+    light: "Açık moda geç",
+    dark: "Koyu moda geç",
+  },
   status: {
     draft: "Taslak",
     active: "Aktif",

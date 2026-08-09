@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { logout } from "../api";
 import { useAuth } from "../auth";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Layout() {
   const { user, refresh } = useAuth();
@@ -43,6 +44,9 @@ export function Layout() {
         </div>
       </aside>
       <main className="main">
+        <div className="topbar">
+          <ThemeToggle />
+        </div>
         <Outlet />
       </main>
     </div>
