@@ -14,6 +14,7 @@ from app.db import Base, AsyncSessionLocal, engine
 from app.models import Contract, User
 from app.routers import (
     auth,
+    chat,
     contracts,
     counterparties,
     dashboard,
@@ -77,6 +78,7 @@ app.include_router(counterparties.router)
 app.include_router(meta.router)
 app.include_router(extraction.router)
 app.include_router(llm.router)
+app.include_router(chat.router)
 app.include_router(files.router)
 app.include_router(dashboard.router)
 app.include_router(export.router)

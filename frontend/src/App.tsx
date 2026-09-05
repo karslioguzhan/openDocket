@@ -9,6 +9,7 @@ import { ContractDetail } from "./pages/ContractDetail";
 import { ContractForm } from "./pages/ContractForm";
 import { Counterparties } from "./pages/Counterparties";
 import { Versicherungsnehmer } from "./pages/Versicherungsnehmer";
+import { Chat } from "./pages/Chat";
 import { Trash } from "./pages/Trash";
 import { Admin } from "./pages/Admin";
 import { Settings } from "./pages/Settings";
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="contracts/new" element={<ContractForm />} />
         <Route path="contracts/:id" element={<ContractDetail />} />
         <Route path="contracts/:id/edit" element={<ContractForm />} />
+        <Route path="chat" element={<Chat />} />
         <Route path="counterparties" element={<Counterparties />} />
         <Route path="versicherungsnehmer" element={<Versicherungsnehmer />} />
         <Route path="settings" element={<Settings />} />

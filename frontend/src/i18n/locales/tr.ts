@@ -7,6 +7,7 @@ export const tr: Translation = {
   nav: {
     dashboard: "Panel",
     contracts: "Sözleşmeler",
+    chat: "Yapay Zekâ Asistanı",
     counterparties: "Karşı Taraflar",
     versicherungsnehmer: "Sigorta Ettiren",
     settings: "Ayarlar",
@@ -238,7 +239,7 @@ export const tr: Translation = {
     hideKey: "Gizle",
     baseUrl: "Temel URL",
     model: "Model",
-    hint: "Belge tarama ile alanları otomatik doldurmak için kullanılır. Yalnızca bu tarayıcıda saklanır ve bir belge tararken sağlayıcıya gönderilir.",
+    hint: "Belge tarama ile alanları otomatik doldurmak ve yapay zekâ asistanı sohbeti için kullanılır. Yalnızca bu tarayıcıda saklanır ve bir belge tararken veya soru sorarken sağlayıcıya gönderilir.",
     visionLabel: "Belge görsellerini yapay zekâya gönder (görüntü)",
     visionHint:
       "Taranan sayfaları/PDF'leri görsel olarak da gönderir. Tüm modeller görselleri desteklemez — hata durumunda otomatik olarak yalnızca metne dönülür.",
@@ -258,6 +259,29 @@ export const tr: Translation = {
     providerDeepSeek: "DeepSeek",
     providerLocal: "Yerel (Ollama / LM Studio)",
     providerCustom: "Özel / diğer",
+  },
+  chat: {
+    title: "Yapay Zekâ Asistanı",
+    emptyTitle: "Nasıl yardımcı olabilirim?",
+    emptyHint:
+      "openDocket'ın kullanımı ve erişiminizin olduğu sözleşmeler hakkındaki soruları yanıtlayabilirim.",
+    inputPlaceholder: "Kullanım veya sözleşmelerin hakkında sor…",
+    send: "Gönder",
+    clear: "Sohbeti temizle",
+    thinking: "Asistan yazıyor…",
+    sendFailed: "Asistan yanıtlayamadı",
+    noProviderError: "Yapay zekâ asistanı yapılandırılmamış.",
+    noProviderHint:
+      "Ayarlar'dan bir sağlayıcı ekleyin veya yöneticinizden sunucuda LLM_BASE_URL ve LLM_MODEL ayarlamasını isteyin.",
+    noBrowserConfig:
+      "Bu tarayıcıda bir yapay zekâ sağlayıcısı kayıtlı değil. Sunucuda da LLM yapılandırılmadıysa Ayarlar'dan bir tane ekleyin; aksi halde ilk soru başarısız olur.",
+    privacy: "Sorular ve sözleşme verileriniz, kullandığınız yapay zekâ sağlayıcısına gönderilir.",
+    providerUser: "sağlayıcınızla yanıtlandı ({{model}})",
+    providerServer: "sunucu varsayılanıyla yanıtlandı ({{model}})",
+    suggestionExpiring: "Önümüzdeki 90 gün içinde hangi sözleşmelerin süresi doluyor?",
+    suggestionSpend: "Bu sözleşmeler için toplam ne kadar ödüyorum?",
+    suggestionScan: "Bir sözleşmeyi tarayarak nasıl eklerim?",
+    suggestionShare: "Bir sözleşmeyi başka biriyle nasıl paylaşırım?",
   },
   counterparties: {
     title: "Karşı Taraflar",

@@ -791,13 +791,16 @@ def call_chat_completion(
     user_text: str,
     timeout: float = 60,
     images: list[bytes] | None = None,
+    history: list[dict[str, str]] | None = None,
+    temperature: float = 0.0,
 ) -> str:
     """Send an OpenAI-style chat completion and return the assistant's text.
 
     When ``images`` is provided (JPEG bytes), the request uses a multimodal
     ``content`` array with ``image_url`` parts so vision-capable models can see
-    the documents. Raises on transport/HTTP errors so callers can decide how to
-    handle them.
+    the documents. ``history`` optionally carries prior ``user``/``assistant``
+    turns placed between the system message and the new ``user_text``. Raises on
+    transport/HTTP errors so callers can decide how to handle them.
     """
     headers = {}
     api_key = (api_key or "").strip() or None
@@ -817,16 +820,22 @@ def call_chat_completion(
     else:
         user_message = user_text
 
+    messages: list[dict[str, object]] = [{"role": "system", "content": system}]
+    if history:
+        for turn in history:
+            role = turn.get("role")
+            content = turn.get("content")
+            if role in {"user", "assistant"} and isinstance(content, str) and content.strip():
+                messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": user_message})
+
     resp = httpx.post(
         f"{base_url.rstrip('/')}/chat/completions",
         headers=headers,
         json={
             "model": model,
-            "temperature": 0,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user_message},
-            ],
+            "temperature": temperature,
+            "messages": messages,
         },
         timeout=timeout,
     )

@@ -126,3 +126,18 @@ export interface LLMTestResult {
   error: string | null;
   response: string | null;
 }
+
+export type ChatRole = "user" | "assistant";
+
+export interface ChatTurn {
+  role: ChatRole;
+  content: string;
+}
+
+export interface ChatResponse {
+  answer: string;
+  llm_source: "user" | "server" | null;
+  model: string | null;
+  context_contract_count: number;
+  context_truncated: boolean;
+}

@@ -25,6 +25,7 @@ export function Layout() {
             {t("nav.dashboard")}
           </NavLink>
           <NavLink to="/contracts">{t("nav.contracts")}</NavLink>
+          <NavLink to="/chat">{t("nav.chat")}</NavLink>
           <NavLink to="/counterparties">{t("nav.counterparties")}</NavLink>
           <NavLink to="/versicherungsnehmer">{t("nav.versicherungsnehmer")}</NavLink>
           <NavLink to="/settings">{t("nav.settings")}</NavLink>

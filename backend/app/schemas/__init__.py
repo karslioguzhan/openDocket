@@ -214,6 +214,29 @@ class LLMTestOut(BaseModel):
     response: str | None = None
 
 
+class ChatTurn(BaseModel):
+    """One prior message in the conversation (must come in user/assistant pairs)."""
+
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=8000)
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=8000)
+    history: list[ChatTurn] = Field(default_factory=list)
+    base_url: str | None = Field(default=None, max_length=500)
+    api_key: str | None = Field(default=None, max_length=500)
+    model: str | None = Field(default=None, max_length=200)
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    llm_source: Literal["user", "server"] | None = None
+    model: str | None = None
+    context_contract_count: int = 0
+    context_truncated: bool = False
+
+
 class DashboardOut(BaseModel):
     expiring_soon: list[ContractOut]
     status_counts: dict[str, int]

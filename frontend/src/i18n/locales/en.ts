@@ -5,6 +5,7 @@ export const en = {
   nav: {
     dashboard: "Dashboard",
     contracts: "Contracts",
+    chat: "AI Assistant",
     counterparties: "Counterparties",
     versicherungsnehmer: "Policyholders",
     settings: "Settings",
@@ -236,7 +237,7 @@ export const en = {
     hideKey: "Hide",
     baseUrl: "Base URL",
     model: "Model",
-    hint: "Used by scan-to-contract to auto-fill fields. Stored only in this browser and sent to the provider when you scan a document.",
+    hint: "Used by scan-to-contract to auto-fill fields and by the AI Assistant chat. Stored only in this browser and sent to the provider when you scan a document or ask a question.",
     visionLabel: "Send document images to the AI (vision)",
     visionHint:
       "Also sends scanned pages/PDFs as images. Not all models support images — it automatically falls back to text-only on errors.",
@@ -256,6 +257,28 @@ export const en = {
     providerDeepSeek: "DeepSeek",
     providerLocal: "Local (Ollama / LM Studio)",
     providerCustom: "Custom / other",
+  },
+  chat: {
+    title: "AI Assistant",
+    emptyTitle: "How can I help?",
+    emptyHint: "I can answer questions about using openDocket and about the contracts you have access to.",
+    inputPlaceholder: "Ask about usage or your contracts…",
+    send: "Send",
+    clear: "Clear conversation",
+    thinking: "Assistant is typing…",
+    sendFailed: "The assistant could not answer",
+    noProviderError: "The AI assistant is not configured.",
+    noProviderHint:
+      "Add an AI provider in Settings, or ask your administrator to set LLM_BASE_URL and LLM_MODEL on the server.",
+    noBrowserConfig:
+      "No AI provider is saved in this browser. If this server has no LLM configured either, open Settings to add one — otherwise the first question will fail.",
+    privacy: "Questions and your contract data are sent to the AI provider you use.",
+    providerUser: "answered with your provider ({{model}})",
+    providerServer: "answered with the server default ({{model}})",
+    suggestionExpiring: "Which contracts expire in the next 90 days?",
+    suggestionSpend: "How much do I pay in total for these contracts?",
+    suggestionScan: "How do I add a contract by scanning it?",
+    suggestionShare: "How do I share a contract with someone?",
   },
   counterparties: {
     title: "Counterparties",

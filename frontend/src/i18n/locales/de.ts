@@ -7,6 +7,7 @@ export const de: Translation = {
   nav: {
     dashboard: "Dashboard",
     contracts: "Verträge",
+    chat: "KI-Assistent",
     counterparties: "Vertragspartner",
     versicherungsnehmer: "Versicherungsnehmer",
     settings: "Einstellungen",
@@ -238,7 +239,7 @@ export const de: Translation = {
     hideKey: "Ausblenden",
     baseUrl: "Basis-URL",
     model: "Modell",
-    hint: "Wird von „Dokument scannen“ verwendet, um Felder automatisch auszufüllen. Wird nur in diesem Browser gespeichert und beim Scannen an den Anbieter gesendet.",
+    hint: "Wird von „Dokument scannen“ zum automatischen Ausfüllen von Feldern und vom KI-Assistenten-Chat verwendet. Wird nur in diesem Browser gespeichert und beim Scannen oder bei einer Frage an den Anbieter gesendet.",
     visionLabel: "Dokumentbilder an die KI senden (Vision)",
     visionHint:
       "Sendet gescannte Seiten/PDFs auch als Bild mit. Nicht alle Modelle unterstützen Bilder – im Fehlerfall wird automatisch nur der Text verwendet.",
@@ -258,6 +259,29 @@ export const de: Translation = {
     providerDeepSeek: "DeepSeek",
     providerLocal: "Lokal (Ollama / LM Studio)",
     providerCustom: "Benutzerdefiniert / sonstige",
+  },
+  chat: {
+    title: "KI-Assistent",
+    emptyTitle: "Wobei kann ich helfen?",
+    emptyHint:
+      "Ich beantworte Fragen zur Nutzung von openDocket und zu den Verträgen, auf die du Zugriff hast.",
+    inputPlaceholder: "Frage zu Nutzung oder deinen Verträgen…",
+    send: "Senden",
+    clear: "Unterhaltung löschen",
+    thinking: "Assistent schreibt…",
+    sendFailed: "Der Assistent konnte nicht antworten",
+    noProviderError: "Der KI-Assistent ist nicht eingerichtet.",
+    noProviderHint:
+      "Füge in den Einstellungen einen KI-Anbieter hinzu oder bitte deinen Administrator, LLM_BASE_URL und LLM_MODEL auf dem Server zu setzen.",
+    noBrowserConfig:
+      "In diesem Browser ist kein KI-Anbieter gespeichert. Wenn auf dem Server ebenfalls kein LLM konfiguriert ist, öffne die Einstellungen, um einen hinzuzufügen – andernfalls schlägt die erste Frage fehl.",
+    privacy: "Fragen und deine Vertragsdaten werden an den von dir verwendeten KI-Anbieter gesendet.",
+    providerUser: "geantwortet mit deinem Anbieter ({{model}})",
+    providerServer: "geantwortet mit dem Server-Standard ({{model}})",
+    suggestionExpiring: "Welche Verträge laufen in den nächsten 90 Tagen aus?",
+    suggestionSpend: "Wie viel zahle ich insgesamt für diese Verträge?",
+    suggestionScan: "Wie füge ich einen Vertrag per Scan hinzu?",
+    suggestionShare: "Wie teile ich einen Vertrag mit jemandem?",
   },
   counterparties: {
     title: "Vertragspartner",
