@@ -35,6 +35,11 @@ CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    if settings.secret in {"", "change-me"}:
+        print(
+            "WARNING: SECRET is unset or still the default 'change-me'. Set a long "
+            "random SECRET before exposing this instance to a network."
+        )
     if settings.auto_create_tables:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)

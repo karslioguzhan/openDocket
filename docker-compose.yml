@@ -23,10 +23,12 @@ services:
       FILE_STORAGE_DIR: /data/files
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       AUTO_CREATE_TABLES: "false"
-      ENABLE_DEMO: ${ENABLE_DEMO:-true}
+      ENABLE_DEMO: ${ENABLE_DEMO:-false}
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-}
+      LLM_ALLOWED_HOSTS: ${LLM_ALLOWED_HOSTS:-opencode.ai,api.openai.com,openrouter.ai,api.groq.com,api.deepseek.com}
+      LLM_ALLOW_PRIVATE: ${LLM_ALLOW_PRIVATE:-false}
     volumes:
       - filedata:/data/files
     healthcheck:

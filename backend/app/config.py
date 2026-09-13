@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     admin_password: str = ""
     admin_is_superuser: bool = True
     auto_create_tables: bool = False
-    enable_demo: bool = True
+    enable_demo: bool = False
     trash_purge_days: int = 30
     llm_base_url: str = ""
     llm_api_key: str = ""

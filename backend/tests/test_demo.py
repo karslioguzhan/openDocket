@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import app.db as db_module
+from app.config import Settings
 from app.models import User
 from app.services.demo import DEMO_EMAIL, DEMO_SEED_VERSION, ensure_demo
 
@@ -151,3 +152,9 @@ async def test_demo_versicherungsnehmer(client):
 
     child = next(c for c in rows if c["title"] == "Kinderunfallversicherung")
     assert child["versicherungsnehmer"]["name"] == "Elena Beispiel"
+
+
+def test_demo_mode_is_disabled_by_default(monkeypatch):
+    """The public demo account must be opt-in, not the default."""
+    monkeypatch.delenv("ENABLE_DEMO", raising=False)
+    assert Settings().enable_demo is False

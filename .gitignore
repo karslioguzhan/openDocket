@@ -12,6 +12,7 @@ frontend/*.tsbuildinfo
 
 # Env & data
 .env
+opendocket-test-files-*/
 backend/.env
 backend/data/
 data/
