@@ -9,6 +9,7 @@ from fastapi_users.authentication import AuthenticationBackend, CookieTransport
 from fastapi_users.authentication.strategy.db import DatabaseStrategy
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from fastapi_users_db_sqlalchemy.access_token import SQLAlchemyAccessTokenDatabase
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -75,3 +76,18 @@ fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
 
 current_active_user = fastapi_users.current_user(active=True)
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
+
+
+async def revoke_sessions(
+    session: AsyncSession, user_id: uuid.UUID, keep_token: str | None = None
+) -> None:
+    """Delete a user's stored session tokens.
+
+    Called after a password change or account disable so stolen cookies stop
+    working. ``keep_token`` preserves the caller's current session.
+    """
+    stmt = delete(AccessToken).where(AccessToken.user_id == user_id)
+    if keep_token:
+        stmt = stmt.where(AccessToken.token != keep_token)
+    await session.execute(stmt)
+    await session.commit()

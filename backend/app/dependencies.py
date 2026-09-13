@@ -52,20 +52,38 @@ async def get_accessible_contract(
     return contract
 
 
+async def _load_owned_contract(
+    session: AsyncSession,
+    contract_id: uuid.UUID,
+    user: User,
+    include_deleted: bool,
+) -> Contract:
+    stmt = select(Contract).options(*CONTRACT_LOAD_OPTIONS).where(Contract.id == contract_id)
+    if not include_deleted:
+        stmt = stmt.where(Contract.deleted_at.is_(None))
+    contract = (await session.execute(stmt)).scalar_one_or_none()
+    if contract is None or contract.owner_id != user.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Contract not found")
+    contract._role = "owner"
+    return contract
+
+
 async def get_owned_contract(
     contract_id: uuid.UUID,
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_session),
 ) -> Contract:
-    contract = (
-        await session.execute(
-            select(Contract).options(*CONTRACT_LOAD_OPTIONS).where(Contract.id == contract_id)
-        )
-    ).scalar_one_or_none()
-    if contract is None or contract.owner_id != user.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Contract not found")
-    contract._role = "owner"
-    return contract
+    """Owner-only access to a live contract (trashed contracts are excluded)."""
+    return await _load_owned_contract(session, contract_id, user, include_deleted=False)
+
+
+async def get_owned_contract_any_state(
+    contract_id: uuid.UUID,
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_session),
+) -> Contract:
+    """Owner-only access to a contract even while it sits in the trash."""
+    return await _load_owned_contract(session, contract_id, user, include_deleted=True)
 
 
 async def _is_viewer(session: AsyncSession, contract_id: uuid.UUID, user_id: uuid.UUID) -> bool:
@@ -85,4 +103,5 @@ __all__ = [
     "accessible_contracts_query",
     "get_accessible_contract",
     "get_owned_contract",
+    "get_owned_contract_any_state",
 ]

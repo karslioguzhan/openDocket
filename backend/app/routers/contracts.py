@@ -15,6 +15,7 @@ from app.dependencies import (
     current_active_user,
     get_accessible_contract,
     get_owned_contract,
+    get_owned_contract_any_state,
 )
 from app.models import (
     CATEGORY_GROUPS,
@@ -306,7 +307,7 @@ async def delete_contract(
 
 @router.post("/{contract_id}/restore", response_model=ContractOut)
 async def restore_contract(
-    contract: Contract = Depends(get_owned_contract),
+    contract: Contract = Depends(get_owned_contract_any_state),
     session: AsyncSession = Depends(get_session),
 ):
     contract.deleted_at = None

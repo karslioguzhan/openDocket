@@ -8,10 +8,10 @@ from fastapi_users.manager import BaseUserManager
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import current_active_user, get_user_manager
+from app.auth import current_active_user, get_user_manager, revoke_sessions
 from app.db import get_session
 from app.dependencies import current_superuser
-from app.models import User
+from app.models import Contract, ContractFile, User
 from app.schemas import (
     ChangePassword,
     ThemeUpdate,
@@ -20,6 +20,7 @@ from app.schemas import (
     UserRead,
     UserUpdate,
 )
+from app.storage import storage_dir
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -64,11 +65,16 @@ async def change_own_password(
     payload: ChangePassword,
     user: User = Depends(current_active_user),
     user_manager: BaseUserManager = Depends(get_user_manager),
+    session: AsyncSession = Depends(get_session),
 ):
     if not user_manager.verify_password(payload.current_password, user.hashed_password):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Current password is incorrect.")
     update = UserUpdate(password=payload.new_password)
     user = await user_manager.update(update, user, safe=True, request=request)
+    # Invalidate every other session; keep the one making this request.
+    await revoke_sessions(
+        session, user.id, keep_token=request.cookies.get("opendocket_session")
+    )
     return UserRead.model_validate(user)
 
 
@@ -102,6 +108,7 @@ async def update_user(
     payload: UserAdminUpdate,
     admin: User = Depends(current_superuser),
     user_manager: BaseUserManager = Depends(get_user_manager),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
         target = await user_manager.get(user_id)
@@ -111,6 +118,9 @@ async def update_user(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "You cannot disable your own account.")
     update = UserUpdate(**payload.model_dump(exclude_unset=True))
     target = await user_manager.update(update, target, safe=False, request=request)
+    if payload.password is not None or payload.is_active is False:
+        # A reset password or a disabled account must not keep old sessions alive.
+        await revoke_sessions(session, target.id)
     return UserRead.model_validate(target)
 
 
@@ -120,6 +130,7 @@ async def delete_user(
     request: Request,
     admin: User = Depends(current_superuser),
     user_manager: BaseUserManager = Depends(get_user_manager),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
         target = await user_manager.get(user_id)
@@ -129,4 +140,16 @@ async def delete_user(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "You cannot delete your own account.")
     if target.is_superuser:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Cannot delete a superuser account.")
+    # Collect stored filenames before the DB cascade removes the rows.
+    stored_names = (
+        await session.scalars(
+            select(ContractFile.stored_name)
+            .join(Contract, Contract.id == ContractFile.contract_id)
+            .where(Contract.owner_id == target.id)
+        )
+    ).all()
     await user_manager.delete(target, request=request)
+    for stored_name in stored_names:
+        path = storage_dir() / stored_name
+        if path.exists():
+            path.unlink()
