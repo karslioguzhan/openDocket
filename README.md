@@ -255,7 +255,7 @@ Operational notes: set a strong `SECRET` and `POSTGRES_PASSWORD`, and set
 **Requirements:** Docker with the Compose plugin.
 
 ```bash
-git clone <this-repository> openDocket
+git clone https://github.com/karslioguzhan/openDocket.git
 cd openDocket
 
 # 1. Create your environment file
