@@ -25,6 +25,8 @@ rentals, utilities, subscriptions, loans and memberships.
 > self-hostable today; see [Roadmap & known limitations](#roadmap--known-limitations)
 > for what is deliberately not built yet.
 
+![openDocket demo: demo login, dashboard, contracts board, contract detail, policyholders, counterparties, AI assistant and settings](docs/demo.gif)
+
 ### Why it exists
 
 Most people track contracts in a spreadsheet: renewals get missed, policies are
@@ -43,7 +45,8 @@ that is safe to hand to other people.
   insurance?") with strictly read-only, access-scoped context.
 - **Safe by default** — per-user isolation, per-contract ACLs, CSRF and SSRF
   hardening, rate limiting, argon2 passwords.
-- **Easy to run** — `docker compose up` gives you Postgres, the API and the UI.
+- **Easy to run** — `docker compose up` gives you Postgres, the API and the UI, and the
+  one-click demo account (`ENABLE_DEMO=true`) seeds sample contracts to explore.
 
 ### Engineering notes
 
