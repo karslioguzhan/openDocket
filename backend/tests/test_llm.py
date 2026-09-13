@@ -38,15 +38,81 @@ class _FakeLLMSettings:
     llm_base_url = "https://llm.example.test/v1"
     llm_api_key = "env-key"
     llm_model = "env-model"
+    llm_allowed_hosts = "override.example"
+    llm_allow_private = False
 
 
 class _FakeLLMSettingsNoKey:
     llm_base_url = "https://llm.example.test/v1"
     llm_api_key = ""
     llm_model = "env-model"
+    llm_allowed_hosts = ""
+    llm_allow_private = False
 
 
-async def test_llm_request_override_takes_precedence(client, owner, login, monkeypatch):
+async def test_extract_override_endpoint_off_allowlist_is_refused(
+    client, owner, login, monkeypatch
+):
+    """A per-request endpoint that is not allow-listed must never be contacted."""
+    await login(client, "owner@example.com")
+
+    calls = []
+
+    def fake_post(url: str, **kwargs):
+        calls.append((url, kwargs))
+        return _FakeLLMResponse()
+
+    monkeypatch.setattr(extraction, "get_settings", _FakeLLMSettings)
+    monkeypatch.setattr(extraction.httpx, "post", fake_post)
+
+    resp = await client.post(
+        "/api/contracts/extract",
+        files={"files": ("doc.txt", b"gibberish", "text/plain")},
+        data={
+            "llm_base_url": "http://169.254.169.254/v1",
+            "llm_model": "override-model",
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert calls == []  # SSRF attempt blocked before any request was made
+
+
+async def test_extract_override_allowed_host_withholds_server_key(
+    client, owner, login, monkeypatch
+):
+    """An allow-listed user endpoint gets the user's key, never the server's."""
+    await login(client, "owner@example.com")
+
+    calls = []
+
+    def fake_post(url: str, **kwargs):
+        calls.append((url, kwargs))
+        return _FakeLLMResponse()
+
+    monkeypatch.setattr(extraction, "get_settings", _FakeLLMSettings)
+    monkeypatch.setattr(extraction.httpx, "post", fake_post)
+
+    resp = await client.post(
+        "/api/contracts/extract",
+        files={"files": ("doc.txt", b"gibberish", "text/plain")},
+        data={
+            "llm_base_url": "https://override.example/v1",
+            "llm_model": "override-model",
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["counterparty_name"] == "LLM Corp"
+
+    assert calls
+    url, kwargs = calls[0]
+    assert url == "https://override.example/v1/chat/completions"
+    assert "Authorization" not in kwargs["headers"]
+    assert kwargs["json"]["model"] == "override-model"
+
+
+async def test_extract_override_forwards_the_users_own_key(
+    client, owner, login, monkeypatch
+):
     await login(client, "owner@example.com")
 
     calls = []
@@ -68,7 +134,6 @@ async def test_llm_request_override_takes_precedence(client, owner, login, monke
         },
     )
     assert resp.status_code == 200, resp.text
-    assert resp.json()["counterparty_name"] == "LLM Corp"
 
     assert calls
     url, kwargs = calls[0]

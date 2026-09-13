@@ -3,8 +3,13 @@ from __future__ import annotations
 import os
 import tempfile
 
-os.environ["OPEN_DOCKET_SECRET"] = "test-secret"
-os.environ["OPEN_DOCKET_FILE_STORAGE_DIR"] = tempfile.mkdtemp(prefix="opendocket-test-files-")
+# Settings are cached on first import, so configure the environment up front.
+os.environ["SECRET"] = "test-secret"
+os.environ["FILE_STORAGE_DIR"] = tempfile.mkdtemp(prefix="opendocket-test-files-")
+# Demo mode is off by default in production; turn it on for the test suite.
+os.environ["ENABLE_DEMO"] = "true"
+# Hosts the tests use as fake AI providers (the allow-list is enforced).
+os.environ["LLM_ALLOWED_HOSTS"] = "x.example,llm.example.test,override.example,third-party.example"
 
 import httpx
 import pytest

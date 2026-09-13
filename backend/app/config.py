@@ -19,6 +19,16 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_api_key: str = ""
     llm_model: str = ""
+    # Comma-separated hostnames the server may contact for AI requests
+    # (scan-to-contract autofill and the assistant). Public provider hosts are
+    # pre-listed; add your own provider, or set LLM_ALLOW_PRIVATE=true to allow
+    # local/private endpoints such as a self-hosted Ollama.
+    llm_allowed_hosts: str = (
+        "opencode.ai,api.openai.com,openrouter.ai,api.groq.com,api.deepseek.com"
+    )
+    # DANGEROUS: allows AI endpoints on any host, including loopback and private
+    # addresses. Only enable on a single-user, fully trusted deployment.
+    llm_allow_private: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

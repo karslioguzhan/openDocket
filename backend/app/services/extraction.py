@@ -8,6 +8,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from PIL import Image, UnidentifiedImageError
@@ -783,6 +784,66 @@ def _detect_versicherungsnehmer(text: str) -> str | None:
     return None
 
 
+class EndpointNotAllowedError(ValueError):
+    """The requested AI endpoint is not on the server's allow-list."""
+
+
+def _allowed_llm_hosts() -> set[tuple[str, int | None]]:
+    """Parse ``LLM_ALLOWED_HOSTS`` into ``(host, port)`` pairs.
+
+    Entries may be plain hostnames (``api.openai.com``) or ``host:port`` pairs
+    (``localhost:11434``) for providers on a non-standard port.
+    """
+    settings = get_settings()
+    raw = getattr(settings, "llm_allowed_hosts", "") or ""
+    allowed: set[tuple[str, int | None]] = set()
+    for entry in raw.split(","):
+        entry = entry.strip().lower()
+        if not entry:
+            continue
+        host, sep, port = entry.rpartition(":")
+        if sep and port.isdigit():
+            allowed.add((host, int(port)))
+        else:
+            allowed.add((entry, None))
+    return allowed
+
+
+def assert_safe_endpoint(base_url: str) -> None:
+    """Reject AI endpoints the server must not contact (SSRF protection).
+
+    A host is allowed when the operator opted out with ``LLM_ALLOW_PRIVATE``,
+    when it is the host of the server-configured ``LLM_BASE_URL``, or when it is
+    explicitly listed in ``LLM_ALLOWED_HOSTS``. Everything else is refused, which
+    blocks loopback/private/link-local targets such as cloud metadata services.
+    """
+    parsed = urlparse((base_url or "").strip())
+    if parsed.scheme not in {"http", "https"}:
+        raise EndpointNotAllowedError("AI endpoint must be an http(s) URL.")
+    if parsed.username or parsed.password:
+        raise EndpointNotAllowedError("AI endpoint must not contain credentials.")
+    host = (parsed.hostname or "").lower()
+    if not host:
+        raise EndpointNotAllowedError("AI endpoint has no host.")
+
+    settings = get_settings()
+    if getattr(settings, "llm_allow_private", False):
+        return
+    configured = urlparse((getattr(settings, "llm_base_url", "") or "").strip()).hostname
+    if configured and host == configured.lower():
+        return
+    allowed = _allowed_llm_hosts()
+    if (host, None) in allowed and parsed.port in (None, 80, 443):
+        return
+    if (host, parsed.port) in allowed:
+        return
+    raise EndpointNotAllowedError(
+        f"AI endpoint host '{host}' is not allowed. Add it to LLM_ALLOWED_HOSTS "
+        "(as 'api.example.com' or 'localhost:11434'), or set "
+        "LLM_ALLOW_PRIVATE=true to allow any endpoint."
+    )
+
+
 def call_chat_completion(
     base_url: str,
     api_key: str | None,
@@ -829,6 +890,7 @@ def call_chat_completion(
                 messages.append({"role": role, "content": content})
     messages.append({"role": "user", "content": user_message})
 
+    assert_safe_endpoint(base_url)
     resp = httpx.post(
         f"{base_url.rstrip('/')}/chat/completions",
         headers=headers,
@@ -838,6 +900,8 @@ def call_chat_completion(
             "messages": messages,
         },
         timeout=timeout,
+        follow_redirects=False,
+        trust_env=False,
     )
     try:
         resp.raise_for_status()
@@ -873,11 +937,19 @@ def _parse_with_llm(
     text: str, images: list[bytes] | None = None, llm_config: dict[str, str] | None = None
 ) -> dict[str, Any]:
     settings = get_settings()
-    base_url = (llm_config or {}).get("base_url") or settings.llm_base_url
-    api_key = (llm_config or {}).get("api_key") or settings.llm_api_key
-    model = (llm_config or {}).get("model") or settings.llm_model
+    override = llm_config or {}
+    base_url = (override.get("base_url") or settings.llm_base_url or "").strip()
+    model = (override.get("model") or settings.llm_model or "").strip()
     if not (base_url and model):
         return {}
+    # Never forward the server-wide API key to an endpoint chosen per request.
+    user_key = (override.get("api_key") or "").strip()
+    if user_key:
+        api_key = user_key
+    elif override.get("base_url") or override.get("model"):
+        api_key = None
+    else:
+        api_key = (settings.llm_api_key or "").strip() or None
 
     categories = ", ".join(c.value for c in ContractCategory)
     system = (

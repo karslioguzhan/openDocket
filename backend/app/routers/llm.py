@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from functools import partial
+
+import anyio
 import httpx
 from fastapi import APIRouter, Depends
 
@@ -18,13 +21,16 @@ async def test_llm(
 ):
     """Send a tiny chat completion to validate an OpenAI-compatible endpoint."""
     try:
-        response = call_chat_completion(
-            payload.base_url,
-            payload.api_key,
-            payload.model,
-            "You are a connection test. Reply with exactly: OK",
-            "ping",
-            timeout=30,
+        response = await anyio.to_thread.run_sync(
+            partial(
+                call_chat_completion,
+                payload.base_url,
+                payload.api_key,
+                payload.model,
+                "You are a connection test. Reply with exactly: OK",
+                "ping",
+                timeout=30,
+            )
         )
     except (httpx.HTTPError, KeyError, ValueError, IndexError) as exc:
         return LLMTestOut(ok=False, error=str(exc) or exc.__class__.__name__)

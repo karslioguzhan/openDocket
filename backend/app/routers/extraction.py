@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 
+import anyio
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from app.dependencies import current_active_user
@@ -50,7 +52,15 @@ async def extract_contract(
         if value and value.strip()
     }
     use_vision = (llm_vision or "").strip().lower() in {"1", "true", "yes", "on"}
-    parsed = parse_contract_documents(documents, llm_config=llm_config or None, use_vision=use_vision)
+    # OCR and the provider call are blocking; keep them off the event loop.
+    parsed = await anyio.to_thread.run_sync(
+        partial(
+            parse_contract_documents,
+            documents,
+            llm_config=llm_config or None,
+            use_vision=use_vision,
+        )
+    )
     if not parsed:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
